@@ -21,13 +21,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Your Code Will Appear Here"
-            android:textColor="@color/black"
-            android:textAllCaps="false"
-            android:textAlignment="center"
             android:elevation="1dp"
             android:padding="4dp"
-            android:textSize="15dp"/>
+            android:text="Your Code Will Appear Here"
+            android:textAlignment="center"
+            android:textAllCaps="false"
+            android:textColor="@color/black"
+            android:textSize="15dp"
+            tools:ignore="TextSizeCheck" />
 
         <ImageView
             android:id="@+id/QRCodeImg"
@@ -152,5 +153,18 @@
         android:background="@drawable/button_back"
         android:text="Generate QR Code"
         android:textAllCaps="false"/>
+
+
+
+
+        <Button
+            android:id="@+id/shareBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Share QR Code"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="16dp"/>
+
+
 
 </RelativeLayout>
