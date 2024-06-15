@@ -143,8 +143,38 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 Map<String, String> parsedData = parseScannedData(data);
 
                 // Use the parsed data as needed
-                // For example, print the INTENSITY
-                String intensity = parsedData.get("INTENSITY");
+                doctorName = parsedData.get("Doctor name");
+                hospital = parsedData.get("hospital");
+                doctorAddress = parsedData.get("doctor address");
+                doctorPhone = parsedData.get("doctor phone");
+                patientName = parsedData.get("Patient Name");
+                mrn = parsedData.get("MRN");
+                testEye=parsedData.get("Eye");
+                phoneNo = parsedData.get("Phone no");
+                threshold = parsedData.get("threshold");
+                fixationLoss = parsedData.get("Fixation Loss");
+                falsePOSError = parsedData.get("False POS Error");
+                falseNEGError = parsedData.get("False NEG Error");
+                testDuration = parsedData.get("Test Duration");
+                fovea = parsedData.get("Fovea");
+                fixationTarget = parsedData.get("Fixation Traget");
+                fixationMonitor = parsedData.get("Fixation Monitor");
+                stimulusSize = parsedData.get("Stimulus Size");
+                visualAcuity = parsedData.get("Visual Acuity");
+                power =parsedData.get("Power");
+                date = parsedData.get("Date");
+                time = parsedData.get("Time");
+                age = parsedData.get("Age");
+                gender =parsedData.get("Gender");
+                intensity = parsedData.get("INTENSITY");
+                totalDeviation = parsedData.get("Total deviation");
+                patternDeviation = parsedData.get("Pattern Deviation");
+                visualFieldIndex = parsedData.get("Visual Field Index (VFI)");
+                meanDeviation = parsedData.get("Mean Deviation (MD)");
+                patternStandardDeviation = parsedData.get("Pattern Standard Deviation (PSD)");
+                ght = parsedData.get("GHT");
+                eyeTracking = parsedData.get("Eye Tracking");
+                lookedAway = parsedData.get("Looked Away");
                 String[] intensityParts = intensity.split(",");
                 int[] INTENSITY_RESULT = new int[intensityParts.length];
 
@@ -158,7 +188,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                     }
                 }
 
-                createPdf(intensity);
+                createPdf(data);
             }
 
             private Map<String, String> parseScannedData(String data) {
