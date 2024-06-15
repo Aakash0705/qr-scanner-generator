@@ -46,7 +46,7 @@ public class GenerateQRCodeActivity extends AppCompatActivity {
         qrCodeGenderInput = findViewById(R.id.inputGender);
         qrCodePhoneNumberInput = findViewById(R.id.inputPhoneNumber);
         qrCodeGeneratorButton = findViewById(R.id.QRCodeGeneratorBtn);
-        shareButton = findViewById(R.id.shareBtn); // Assuming you have added this button in your layout
+        shareButton = findViewById(R.id.shareBtn);
 
         qrCodeGeneratorButton.setOnClickListener(new View.OnClickListener() {
             @Override

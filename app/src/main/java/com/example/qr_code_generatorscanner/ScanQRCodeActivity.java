@@ -14,10 +14,15 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,11 +47,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import eu.livotov.labs.android.camview.ScannerLiveView;
 import eu.livotov.labs.android.camview.scanner.decoder.zxing.ZXDecoder;
+
 
 public class ScanQRCodeActivity extends AppCompatActivity {
 
@@ -54,7 +66,41 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private ScannerLiveView scannerLiveView;
     private TextView scannedTextView;
     private String scannedData;
+    private String intensity;
     private Button selectFromGalleryBtn;
+    Bitmap stdBmp;
+
+    private String doctorName;
+    private String hospital;
+    private String doctorAddress;
+    private String doctorPhone;
+    private String patientName;
+    private String mrn;
+    private String testEye;
+    private String phoneNo;
+    private String threshold;
+    private String fixationLoss;
+    private String falsePOSError;
+    private String falseNEGError;
+    private String testDuration;
+    private String fovea;
+    private String fixationTarget;
+    private String fixationMonitor;
+    private String stimulusSize;
+    private String visualAcuity;
+    private String power;
+    private String date;
+    private String time;
+    private String age;
+    private String gender;
+    private String totalDeviation;
+    private String patternDeviation;
+    private String visualFieldIndex;
+    private String meanDeviation;
+    private String patternStandardDeviation;
+    private String ght;
+    private String eyeTracking;
+    private String lookedAway;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,11 +134,49 @@ public class ScanQRCodeActivity extends AppCompatActivity {
             }
 
             @Override
+
             public void onCodeScanned(String data) {
                 scannedData = data;
                 scannedTextView.setText(data);
-                createPdf(data);
+
+                // Parse the scanned data
+                Map<String, String> parsedData = parseScannedData(data);
+
+                // Use the parsed data as needed
+                // For example, print the INTENSITY
+                String intensity = parsedData.get("INTENSITY");
+                String[] intensityParts = intensity.split(",");
+                int[] INTENSITY_RESULT = new int[intensityParts.length];
+
+                for (int i = 0; i < intensityParts.length; i++) {
+                    try {
+                        INTENSITY_RESULT[i] = Integer.parseInt(intensityParts[i].trim());
+                    } catch (NumberFormatException e) {
+                        // Handle if the string part cannot be parsed as an integer
+                        e.printStackTrace();
+                        // You might want to handle this case based on your application's logic
+                    }
+                }
+
+                createPdf(intensity);
             }
+
+            private Map<String, String> parseScannedData(String data) {
+                Map<String, String> dataMap = new HashMap<>();
+                String[] lines = data.split("\n");
+
+                for (String line : lines) {
+                    String[] keyValue = line.split(":");
+                    if (keyValue.length == 2) {
+                        String key = keyValue[0].trim(); // Trim key to remove any leading or trailing whitespace
+                        String value = keyValue[1].trim(); // Trim value to remove any leading or trailing whitespace
+                        dataMap.put(key, value);
+                    }
+                }
+
+                return dataMap;
+            }
+
         });
 
         selectFromGalleryBtn.setOnClickListener(v -> selectImageFromGallery());
@@ -112,7 +196,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
             try {
                 InputStream imageStream = getContentResolver().openInputStream(selectedImage);
                 Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
-                decodeQRCode(bitmap);
+                //decodeQRCode(bitmap);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
                 Toast.makeText(this, "Unable to open image", Toast.LENGTH_SHORT).show();
@@ -120,25 +204,181 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         }
     }
 
-    private void decodeQRCode(Bitmap bitmap) {
-        int[] intArray = new int[bitmap.getWidth() * bitmap.getHeight()];
-        bitmap.getPixels(intArray, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
-
-        RGBLuminanceSource source = new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), intArray);
-        BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
-        MultiFormatReader reader = new MultiFormatReader();
-
-        try {
-            Result result = reader.decode(binaryBitmap);
-            scannedData = result.getText();
-            scannedTextView.setText(scannedData);
-            createPdf(scannedData);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Error decoding QR Code", Toast.LENGTH_SHORT).show();
-        }
-    }
-
+//    private void decodeQRCode(Bitmap bitmap) {
+//        int[] intArray = new int[bitmap.getWidth() * bitmap.getHeight()];
+//        bitmap.getPixels(intArray, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+//
+//        RGBLuminanceSource source = new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), intArray);
+//        BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
+//        MultiFormatReader reader = new MultiFormatReader();
+//
+//        try {
+//            Result result = reader.decode(binaryBitmap);
+//            String scannedData = result.getText();
+//            Log.d("genData","data"+ scannedData);
+//            Toast.makeText(this, "QR Code scanned successfully: " + scannedData, Toast.LENGTH_SHORT).show();
+//
+//            // List of keys to fetch
+//            List<String> keys = Arrays.asList("Doctor name","hospital","doctor address","doctor phone",
+//                    "Patient Name","MRN","Eye","Phone no","threshold","Fixation Loss","False POS Error",
+//                    "False NEG Error","Test Duration","Fovea","Fixation Target","Fixation Monitor",
+//                    "Stimulus Size","Visual Acuity","Power","Date","Time","Age","Gender","INTENSITY",
+//                    "Total deviation","Pattern Deviation","Visual Field Index (VFI)","Mean Deviation (MD)",
+//                    "Pattern Standard Deviation (PSD)","GHT","Eye Tracking","Looked Away");
+//
+//            // Regular expression to match key-value pairs separated by ;
+//            Pattern pattern = Pattern.compile("([^;]+):([^;]+);?");
+//            Matcher matcher = pattern.matcher(scannedData);
+//
+//            // Variables to store values
+//            String doctorName = null;
+//            String hospital = null;
+//            String doctorAddress = null;
+//            String doctorPhone = null;
+//            String patientName = null;
+//            String mrn = null;
+//            String eye = null;
+//            String phoneNo = null;
+//            String threshold = null;
+//            String fixationLoss = null;
+//            String falsePOSError = null;
+//            String falseNEGError = null;
+//            String testDuration = null;
+//            String fovea = null;
+//            String fixationTarget = null;
+//            String fixationMonitor = null;
+//            String stimulusSize = null;
+//            String visualAcuity = null;
+//            String power = null;
+//            String date = null;
+//            String time = null;
+//            String age = null;
+//            String gender = null;
+//            intensity = null;
+//            String totalDeviation = null;
+//            String patternDeviation = null;
+//            String visualFieldIndex = null;
+//            String meanDeviation = null;
+//            String patternStandardDeviation = null;
+//            String ght = null;
+//            String eyeTracking = null;
+//            String lookedAway = null;
+//
+//            // Iterate through matched pairs
+//            while (matcher.find()) {
+//                String key = matcher.group(1).trim();
+//                String value = matcher.group(2).trim();
+//                // Assign values to corresponding variables
+//                switch (key) {
+//                    case "Doctor name":
+//                        doctorName = value;
+//                        break;
+//                    case "hospital":
+//                        hospital = value;
+//                        break;
+//                    case "doctor address":
+//                        doctorAddress = value;
+//                        break;
+//                    case "doctor phone":
+//                        doctorPhone = value;
+//                        break;
+//                    case "Patient Name":
+//                        patientName = value;
+//                        break;
+//                    case "MRN":
+//                        mrn = value;
+//                        break;
+//                    case "Eye":
+//                        eye = value;
+//                        break;
+//                    case "Phone no":
+//                        phoneNo = value;
+//                        break;
+//                    case "threshold":
+//                        threshold = value;
+//                        break;
+//                    case "Fixation Loss":
+//                        fixationLoss = value;
+//                        break;
+//                    case "False POS Error":
+//                        falsePOSError = value;
+//                        break;
+//                    case "False NEG Error":
+//                        falseNEGError = value;
+//                        break;
+//                    case "Test Duration":
+//                        testDuration = value;
+//                        break;
+//                    case "Fovea":
+//                        fovea = value;
+//                        break;
+//                    case "Fixation Target":
+//                        fixationTarget = value;
+//                        break;
+//                    case "Fixation Monitor":
+//                        fixationMonitor = value;
+//                        break;
+//                    case "Stimulus Size":
+//                        stimulusSize = value;
+//                        break;
+//                    case "Visual Acuity":
+//                        visualAcuity = value;
+//                        break;
+//                    case "Power":
+//                        power = value;
+//                        break;
+//                    case "Date":
+//                        date = value;
+//                        break;
+//                    case "Time":
+//                        time = value;
+//                        break;
+//                    case "Age":
+//                        age = value;
+//                        break;
+//                    case "Gender":
+//                        gender = value;
+//                        break;
+//                    case "INTENSITY":
+//                        intensity = value;
+//                        break;
+//                    case "Total deviation":
+//                        totalDeviation = value;
+//                        break;
+//                    case "Pattern Deviation":
+//                        patternDeviation = value;
+//                        break;
+//                    case "Visual Field Index (VFI)":
+//                        visualFieldIndex = value;
+//                        break;
+//                    case "Mean Deviation (MD)":
+//                        meanDeviation = value;
+//                        break;
+//                    case "Pattern Standard Deviation (PSD)":
+//                        patternStandardDeviation = value;
+//                        break;
+//                    case "GHT":
+//                        ght = value;
+//                        break;
+//                    case "Eye Tracking":
+//                        eyeTracking = value;
+//                        break;
+//                    case "Looked Away":
+//                        lookedAway = value;
+//                        break;
+//                    default:
+//                        // Handle unrecognized keys or do nothing
+//                        break;
+//                }
+//            }
+//
+//            //createPdf(intensity);
+//
+//        }catch (Exception e) {
+//            e.printStackTrace();
+//            Toast.makeText(this, "Error decoding QR Code", Toast.LENGTH_SHORT).show();
+//        }
+//    }
     private boolean checkPermission() {
         int cameraPermission = ContextCompat.checkSelfPermission(getApplicationContext(), CAMERA);
         int vibratePermission = ContextCompat.checkSelfPermission(getApplicationContext(), VIBRATE);
@@ -183,6 +423,9 @@ public class ScanQRCodeActivity extends AppCompatActivity {
 
         SimpleDateFormat s = new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss");
         String format = s.format(new Date());
+        if (data == null) {
+            data = "N/A"; // or some default value
+       }
 
         //String timeStamp = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
         String pdfPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + format + "" +"scannedData.pdf";
@@ -194,8 +437,9 @@ public class ScanQRCodeActivity extends AppCompatActivity {
             Document document = new Document(pdfDocument);
 
             PdfFont font = PdfFontFactory.createFont(StandardFonts.HELVETICA);
-            document.add(new Paragraph("Scanned Data:").setFont(font));
+
             document.add(new Paragraph(data).setFont(font));
+
 
             document.close();
 
