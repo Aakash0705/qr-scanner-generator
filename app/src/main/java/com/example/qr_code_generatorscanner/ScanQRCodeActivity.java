@@ -9,7 +9,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -21,53 +20,49 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.zxing.BinaryBitmap;
-import com.google.zxing.MultiFormatReader;
-import com.google.zxing.RGBLuminanceSource;
-import com.google.zxing.Result;
-import com.google.zxing.common.HybridBinarizer;
-import com.itextpdf.io.font.constants.StandardFonts;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.text.BadElementException;
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.FontFactory;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.BaseFont;
+import com.itextpdf.text.pdf.PdfContentByte;
+import com.itextpdf.text.pdf.PdfWriter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.Timestamp;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import eu.livotov.labs.android.camview.ScannerLiveView;
 import eu.livotov.labs.android.camview.scanner.decoder.zxing.ZXDecoder;
 
+import com.itextpdf.text.Image;
 
 public class ScanQRCodeActivity extends AppCompatActivity {
-
+    private final static int REQUEST_MANAGE_EXTERNAL_STORAGE = 1;
     private static final int SELECT_PHOTO = 100;
     private ScannerLiveView scannerLiveView;
     private TextView scannedTextView;
     private String scannedData;
     private String intensity;
     private Button selectFromGalleryBtn;
+    
     Bitmap stdBmp;
 
     private String doctorName;
@@ -101,6 +96,37 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String ght;
     private String eyeTracking;
     private String lookedAway;
+    int[] INTENSITY_RESULT;
+
+    _24_2_Coordinates coordinate24_2;    // Coordinates class
+    double[][] small_rect_r = {           //Corner rectangles : right eye
+            {823, 225, 4}, // 0
+            {933, 335, 4}, // 1
+            {930, 820, 4}, // 2
+            {820, 930, 4}, // 3
+            {335, 930, 4}, // 4
+            {225, 820, 4}, // 5
+            {113, 710, 4}, // 6
+            {113, 445, 4}, // 7
+            {225, 335, 4}, // 8
+            {335, 225, 4}, // 9
+    };
+
+    double[][] small_rect_l = {        //Corner rectangles : left eye
+            {823, 225, 4}, // 0
+            {933, 335, 4}, // 1
+            {1040, 445, 4},// 2
+            {1040, 710, 4},// 3
+            {930, 820, 4}, // 4
+            {820, 930, 4}, // 5
+            {335, 930, 4}, // 6
+            {225, 820, 4}, // 7
+            {225, 335, 4}, // 8
+            {335, 225, 4}, // 9
+    };
+
+    int dot_width = 4;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,9 +137,11 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         scannedTextView = findViewById(R.id.scannedData);
         selectFromGalleryBtn = findViewById(R.id.selectFromGalleryBtn);
 
-        if(checkPermission()){
+
+
+        if (checkPermission()) {
             Toast.makeText(this, "Permission Granted..", Toast.LENGTH_SHORT).show();
-        }else{
+        } else {
             requestPermission();
         }
 
@@ -149,7 +177,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 doctorPhone = parsedData.get("doctor phone");
                 patientName = parsedData.get("Patient Name");
                 mrn = parsedData.get("MRN");
-                testEye=parsedData.get("Eye");
+                testEye = parsedData.get("Eye");
                 phoneNo = parsedData.get("Phone no");
                 threshold = parsedData.get("threshold");
                 fixationLoss = parsedData.get("Fixation Loss");
@@ -157,15 +185,15 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 falseNEGError = parsedData.get("False NEG Error");
                 testDuration = parsedData.get("Test Duration");
                 fovea = parsedData.get("Fovea");
-                fixationTarget = parsedData.get("Fixation Traget");
+                fixationTarget = parsedData.get("Fixation Target");
                 fixationMonitor = parsedData.get("Fixation Monitor");
                 stimulusSize = parsedData.get("Stimulus Size");
                 visualAcuity = parsedData.get("Visual Acuity");
-                power =parsedData.get("Power");
+                power = parsedData.get("Power");
                 date = parsedData.get("Date");
                 time = parsedData.get("Time");
                 age = parsedData.get("Age");
-                gender =parsedData.get("Gender");
+                gender = parsedData.get("Gender");
                 intensity = parsedData.get("INTENSITY");
                 totalDeviation = parsedData.get("Total deviation");
                 patternDeviation = parsedData.get("Pattern Deviation");
@@ -175,21 +203,43 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 ght = parsedData.get("GHT");
                 eyeTracking = parsedData.get("Eye Tracking");
                 lookedAway = parsedData.get("Looked Away");
-                String[] intensityParts = intensity.split(",");
-                int[] INTENSITY_RESULT = new int[intensityParts.length];
+//                String[] intensityParts = new String[65]; // Initialize intensityParts array
+//
+//                if (intensity != null) {
+//                    intensityParts = intensity.split(",");
+//
+//                    // Now you can proceed with further processing using intensityParts array
+//                    // For example, iterate over intensityParts or perform operations based on its content
+//                    // Example:
+//                    for (String part : intensityParts) {
+//                        // Process each part as needed
+//                    }
+//                } else {
+//                    // Handle the case where intensity is null
+//                    Log.e("ScanQRCodeActivity", "Intensity is null");
+//
+//                }
+//                INTENSITY_RESULT = new int[65];
+//                for (int i = 0; i < intensityParts.length; i++) {
+//                    try {
+//                        INTENSITY_RESULT[i] = Integer.parseInt(intensityParts[i].trim());
+//                    } catch (NumberFormatException e) {
+//                        // Handle if the string part cannot be parsed as an integer
+//                        e.printStackTrace();
+//                        // You might want to handle this case based on your application's logic
+//                    }
+//                }
 
-                for (int i = 0; i < intensityParts.length; i++) {
-                    try {
-                        INTENSITY_RESULT[i] = Integer.parseInt(intensityParts[i].trim());
-                    } catch (NumberFormatException e) {
-                        // Handle if the string part cannot be parsed as an integer
-                        e.printStackTrace();
-                        // You might want to handle this case based on your application's logic
-                    }
+                try {
+
+                    createPdfWrapper();
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                } catch (DocumentException e) {
+                    throw new RuntimeException(e);
                 }
-
-                createPdf(data);
             }
+
 
             private Map<String, String> parseScannedData(String data) {
                 Map<String, String> dataMap = new HashMap<>();
@@ -211,6 +261,41 @@ public class ScanQRCodeActivity extends AppCompatActivity {
 
         selectFromGalleryBtn.setOnClickListener(v -> selectImageFromGallery());
     }
+
+    private void setIntensityPattern() {
+
+        Paint stdpaint = new Paint();
+        stdpaint.setColor(Color.BLACK);
+        stdpaint.setStyle(Paint.Style.FILL);
+        stdpaint.setTextSize(24);
+        stdpaint.setTypeface(Typeface.defaultFromStyle(Typeface.NORMAL));
+
+        stdBmp = Bitmap.createBitmap(1200, 1200, Bitmap.Config.ARGB_8888);
+        Canvas stdCanvas = new Canvas(stdBmp);
+
+        int newwidth = 4;
+        float newleft = 600 - newwidth / 2;
+        float newtop = 0;
+        float newright = newleft + newwidth;
+        float newbottom = 1200;
+        stdCanvas.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+
+        newleft = 0;
+        newtop = 600 - newwidth / 2;
+        newright = 1200;
+        newbottom = newtop + newwidth;
+        stdCanvas.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+
+        for (int i = 1; i < 55; i++) {
+            int x = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[0] + 600 - 27;
+            int y = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[1] + 600;
+            stdpaint.setTextSize(30);
+            stdpaint.setStyle(Paint.Style.FILL);
+            stdCanvas.drawText(String.valueOf(INTENSITY_RESULT[i]), x, y, stdpaint);
+        }
+    }
+
+//
 
     private void selectImageFromGallery() {
         Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
@@ -234,7 +319,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         }
     }
 
-//    private void decodeQRCode(Bitmap bitmap) {
+    //    private void decodeQRCode(Bitmap bitmap) {
 //        int[] intArray = new int[bitmap.getWidth() * bitmap.getHeight()];
 //        bitmap.getPixels(intArray, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 //
@@ -449,53 +534,526 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         }
     }
 
-    private void createPdf(String data) {
+    private void createPdfWrapper() throws FileNotFoundException, DocumentException {
 
-        SimpleDateFormat s = new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss");
-        String format = s.format(new Date());
-        if (data == null) {
-            data = "N/A"; // or some default value
-       }
+        String pdffilepath=savePdf();
+        if (pdffilepath != null) {
+            viewPdf(pdffilepath);
+        } else {
+            Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
+        }
 
-        //String timeStamp = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
-        String pdfPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + format + "" +"scannedData.pdf";
-        File file = new File(pdfPath);
+    }
+    private BaseFont bfNormal;
+    private BaseFont bfBold;
 
+    private void initializeFonts() {
         try {
-            PdfWriter writer = new PdfWriter(new FileOutputStream(file));
-            PdfDocument pdfDocument = new PdfDocument(writer);
-            Document document = new Document(pdfDocument);
+            // Load the normal font
+            Font fontNormal = FontFactory.getFont("res/font/product_sans_regular.ttf",
+                    BaseFont.IDENTITY_H, BaseFont.EMBEDDED, 0.8f, Font.NORMAL, BaseColor.BLACK);
 
-            PdfFont font = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+            if (fontNormal == null) {
+                throw new IOException("Failed to load normal font");
+            }
+            bfNormal = fontNormal.getBaseFont();
 
-            document.add(new Paragraph(data).setFont(font));
+            // Load the bold font
+            Font fontBold = FontFactory.getFont("res/font/product_sans_bold.ttf",
+                    BaseFont.IDENTITY_H, BaseFont.EMBEDDED, 0.8f, Font.NORMAL, BaseColor.BLACK);
 
+            if (fontBold == null) {
+                throw new IOException("Failed to load bold font");
+            }
+            bfBold = fontBold.getBaseFont();
 
-            document.close();
-
-            Toast.makeText(this, "PDF Created Successfully", Toast.LENGTH_SHORT).show();
-
-            // Optionally, you can provide an option to view the PDF
-            viewPdf(file);
+            if (bfNormal == null || bfBold == null) {
+                throw new IOException("BaseFont is null after loading");
+            }
         } catch (IOException e) {
             e.printStackTrace();
-            Toast.makeText(this, "Error creating PDF", Toast.LENGTH_SHORT).show();
+            Log.e("FontError", "Error initializing fonts: " + e.getMessage());
         }
     }
 
-    private void viewPdf(File file) {
-        // Use FileProvider to get a content URI
+    private void createHeadings(PdfContentByte cb, float x, float y, String text, int size, String fontStyle) {
+        if (text == null) {
+            Log.e("FontError", "Text is null for the provided heading");
+            return; // Early exit if text is null
+        }
+
+        cb.beginText();
+        BaseFont currentFont = bfNormal;
+        if (fontStyle.equals("normal")) {
+            currentFont = bfNormal;
+        } else {
+            currentFont = bfBold;
+        }
+
+        if (currentFont != null) {
+            cb.setFontAndSize(currentFont, size);
+            cb.setTextMatrix(x, y);
+            cb.showText(text);
+        } else {
+            Log.e("FontError", "Font is null for style: " + fontStyle);
+        }
+        cb.endText();
+    }
+
+
+
+
+    private void pdf_logo_and_details(Document document, PdfContentByte cb) {
+        createHeadings(cb, 120, 805, doctorName, 9, "bold");
+        createHeadings(cb, 120, 793, hospital, 9, "normal");
+        createHeadings(cb, 120, 781, doctorAddress, 9, "normal");
+        createHeadings(cb, 120, 769, doctorPhone, 9, "normal");
+
+
+        //File imgFile = new File(doctor_logo_path);
+//        if(imgFile.exists()) {
+//            Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+//            createImages(document,myBitmap,25,770,50,50);
+//        }
+//        else {
+//            Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.logo);
+//            createImages(document, icon,25,770,50,50);
+//        }
+//
+//        Drawable d3 = getResources().getDrawable(R.drawable.ivalogo);
+//        BitmapDrawable bitDw3 = ((BitmapDrawable) d3);
+//        Bitmap bmp_logo3 = bitDw3.getBitmap();
+//        createImages(document,bmp_logo3,460,770,100,100);
+
+    }
+
+    private void pdf_name_mrn_box(Document document, PdfContentByte cb) {
+        Rectangle rectangle3 = new Rectangle(0, 820, 600, 850);
+        BaseColor myColor = new BaseColor(1, 194, 193);
+        rectangle3.setBackgroundColor(myColor);
+        cb.rectangle(rectangle3);
+
+
+        createHeadings(cb, 30, 745, "Name", 10, "bold");
+        createHeadings(cb, 100, 745, patientName, 10, "normal");
+
+        createHeadings(cb, 30, 730, "Patient MRN", 10, "bold");
+        createHeadings(cb, 100, 730, mrn, 10, "normal");
+        createHeadings(cb, 420, 730, "Phone no", 10, "bold");
+        createHeadings(cb, 490, 730, phoneNo, 10, "normal");
+
+        createHeadings(cb, 420, 745, "Eye", 10, "bold");
+        //if (testEye.equals("Left LOS")) {
+        createHeadings(cb, 490, 745, "Left (OS)", 10, "normal");
+//
+//        } else {
+//            createHeadings(cb, 490, 745, "Right (OD)", 10, "normal");
+//
+//        }
+    }
+
+    private void pdf_details_col_1(Document document, PdfContentByte cb) {
+        createHeadings(cb, 30, 713, "CENTRAL TOP STANDARD THRESHOLD", 8, "bold");
+
+
+        createHeadings(cb, 30, 690, "Fixation Loss", 9, "bold");
+        createHeadings(cb, 100, 690, "-", 9, "normal");
+
+
+        createHeadings(cb, 30, 678, "False POS Error", 9, "bold");
+        createHeadings(cb, 100, 678, falsePOSError, 9, "normal");
+
+
+        createHeadings(cb, 30, 666, "False NEG Error", 9, "bold");
+        createHeadings(cb, 100, 666, falseNEGError, 9, "normal");
+
+
+        createHeadings(cb, 30, 654, "Test Duration", 9, "bold");
+        createHeadings(cb, 100, 654, testDuration, 9, "normal");
+
+
+        createHeadings(cb, 30, 642, "Fovea", 9, "bold");
+        createHeadings(cb, 100, 642, fovea, 9, "normal");
+
+    }
+
+    private void pdf_details_col_2(Document document, PdfContentByte cb) {
+        createHeadings(cb, 140, 690, "Fixation Target", 9, "bold");
+        createHeadings(cb, 220, 690, "Central", 9, "normal");
+
+        createHeadings(cb, 140, 678, "Fixation monitor", 9, "bold");
+        createHeadings(cb, 220, 678, "Blind Spot Test", 9, "normal");
+
+        createHeadings(cb, 140, 666, "Stimulus Size", 9, "bold");
+        createHeadings(cb, 220, 666, "Goldmann III", 9, "normal");
+//        if (stimulusSize.equals("Goldmann III")) {
+//        createHeadings(cb, 220, 666, "Goldmann III", 9, "normal");
+//
+//       } else if (stimulusSize.equals("Goldmann IV")) {
+//           createHeadings(cb, 220, 666, "Goldmann IV", 9, "normal");
+//
+//        } else if (stimulusSize.equals("Goldmann V")) {
+//            createHeadings(cb, 220, 666, "Goldmann V", 9, "normal");
+//
+//        }
+    }
+
+        private void pdf_details_col_3(Document document, PdfContentByte cb){
+        createHeadings(cb, 300, 690, "Visual Acuity", 9, "bold");
+        createHeadings(cb, 390, 690, visualAcuity, 9, "normal");
+
+        createHeadings(cb, 300, 678, "Power", 9, "bold");
+
+        createHeadings(cb, 340, 678, power, 9, "normal");
+
+
+    }
+    private void pdf_details_col_4(Document document, PdfContentByte cb) {
+        createHeadings(cb, 450, 690, "Date", 9, "bold");
+        createHeadings(cb, 490, 690, date, 9, "normal");
+        createHeadings(cb, 450, 678, "Time", 9, "bold");
+        createHeadings(cb, 490, 678, time, 9, "normal");
+
+        createHeadings(cb, 450, 666, "Age", 9, "bold");
+        createHeadings(cb, 490, 666, age + " years", 9, "normal");
+
+        createHeadings(cb, 450, 654, "Gender", 9, "bold");
+        createHeadings(cb, 490, 654, gender, 9, "normal");
+
+        //createImages(document, stdBmp, 30, 420, 200, 210);
+        //createImages(document, bitmap_mapped, 270, 420, 200, 210);
+
+        createHeadings(cb, 490, 610, "Sensitivity", 9, "normal");
+        createHeadings(cb, 490, 600, "threshold [dB]", 9, "normal");
+    }
+
+    //    private void threshold_range_plot(Document document, PdfContentByte cb){
+//        Paint stdpaint = new Paint();
+//        stdpaint.setColor(Color.BLACK);
+//        stdpaint.setStyle(Paint.Style.FILL);
+//
+//        Bitmap bm1_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm2_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm3_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm4_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm5_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm6_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm7_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm8_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm9_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//
+//        Canvas stdcanvas1_1=new Canvas(bm1_1);
+//        Canvas stdcanvas2_1=new Canvas(bm2_1);
+//        Canvas stdcanvas3_1=new Canvas(bm3_1);
+//        Canvas stdcanvas4_1=new Canvas(bm4_1);
+//        Canvas stdcanvas5_1=new Canvas(bm5_1);
+//        Canvas stdcanvas6_1=new Canvas(bm6_1);
+//        Canvas stdcanvas7_1=new Canvas(bm7_1);
+//        Canvas stdcanvas8_1=new Canvas(bm8_1);
+//        Canvas stdcanvas9_1=new Canvas(bm9_1);
+//
+//        stdpaint.setColor(TemporaryVariables.getColorCode(0));
+//        stdcanvas1_1.drawRect(0,0,60,60,stdpaint);
+//
+//        stdpaint.setColor(TemporaryVariables.getColorCode(3));
+//        stdcanvas2_1.drawRect(0,0,60,60,stdpaint);
+//
+//        stdpaint.setColor(TemporaryVariables.getColorCode(8));
+//        stdcanvas3_1.drawRect(0,0,60,60,stdpaint);
+//
+//        stdpaint.setColor(TemporaryVariables.getColorCode(13));
+//        stdcanvas4_1.drawRect(0,0,60,60,stdpaint);
+//
+//        stdpaint.setColor(TemporaryVariables.getColorCode(18));
+//        stdcanvas5_1.drawRect(0,0,60,60,stdpaint);
+//
+//        stdpaint.setColor(TemporaryVariables.getColorCode(23));
+//        stdcanvas6_1.drawRect(0,0,60,60,stdpaint);
+//
+//        stdpaint.setColor(TemporaryVariables.getColorCode(28));
+//        stdcanvas7_1.drawRect(0,0,60,60,stdpaint);
+//
+//        stdpaint.setColor(TemporaryVariables.getColorCode(33));
+//        stdcanvas8_1.drawRect(0,0,60,60,stdpaint);
+//
+//        stdpaint.setColor(TemporaryVariables.getColorCode(35));
+//        stdcanvas9_1.drawRect(0,0,60,60,stdpaint);
+//
+//        createImages(document, bm9_1, 540, 570, 20, 20);
+//        createImages(document, bm8_1, 540, 555, 20, 20);
+//        createImages(document, bm7_1, 540, 540, 20, 20);
+//        createImages(document, bm6_1, 540, 525, 20, 20);
+//        createImages(document, bm5_1, 540, 510, 20, 20);
+//        createImages(document, bm4_1, 540, 495, 20, 20);
+//        createImages(document, bm3_1, 540, 480, 20, 20);
+//        createImages(document, bm2_1, 540, 465, 20, 20);
+//        createImages(document, bm1_1, 540, 450, 20, 20);
+//
+//        createHeadings(cb,500,580,"34 - 36",9,"normal");
+//        createHeadings(cb,500,565,"31 - 35",9,"normal");
+//        createHeadings(cb,500,550,"26 - 30",9,"normal");
+//        createHeadings(cb,500,535,"21 - 25",9,"normal");
+//        createHeadings(cb,500,520,"16 - 20",9,"normal");
+//        createHeadings(cb,500,505,"11 - 15",9,"normal");
+//        createHeadings(cb,500,490,"6 - 10",9,"normal");
+//        createHeadings(cb,500,475,"1 - 5",9,"normal");
+//        createHeadings(cb,500,460,"0",9,"normal");
+//    }
+//    private void p_value_range_plotting(Document document, PdfContentByte cb){
+//        Paint stdpaint = new Paint();
+//        stdpaint.setColor(Color.BLACK);
+//        stdpaint.setStyle(Paint.Style.FILL);
+//
+//        Bitmap bm1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm2 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm3 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//        Bitmap bm4 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+//
+//        Canvas stdcanvas1=new Canvas(bm1);
+//        Canvas stdcanvas2=new Canvas(bm2);
+//        Canvas stdcanvas3=new Canvas(bm3);
+//        Canvas stdcanvas4=new Canvas(bm4);
+//
+//        // <5
+//
+//        stdcanvas1.drawCircle(20,20,4,stdpaint);
+//        stdcanvas1.drawCircle(20,40,4,stdpaint);
+//        stdcanvas1.drawCircle(40,20,4,stdpaint);
+//        stdcanvas1.drawCircle(40,40,4,stdpaint);
+//
+//        //<2
+//
+//        stdcanvas2.drawCircle(10,10,4,stdpaint);
+//        stdcanvas2.drawCircle(30,10,4,stdpaint);
+//        stdcanvas2.drawCircle(50,10,4,stdpaint);
+//
+//        stdcanvas2.drawCircle(10,30,4,stdpaint);
+//        stdcanvas2.drawCircle(50,30,4,stdpaint);
+//
+//        stdcanvas2.drawCircle(10,50,4,stdpaint);
+//        stdcanvas2.drawCircle(30,50,4,stdpaint);
+//        stdcanvas2.drawCircle(50,50,4,stdpaint);
+//
+//        paint.setStyle(Paint.Style.FILL_AND_STROKE);
+//        paint.setStrokeWidth(2);
+//
+//        stdcanvas2.drawLine(30,10,10,30,stdpaint);
+//        stdcanvas2.drawLine(10,30,30,50,stdpaint);
+//        stdcanvas2.drawLine(30,50,50,30,stdpaint);
+//        stdcanvas2.drawLine(50,30,30,10,stdpaint);
+//
+//        // <1
+//        paint.setStyle(Paint.Style.FILL);
+//        stdcanvas3.drawCircle(10,10,4,stdpaint);
+//        stdcanvas3.drawCircle(30,10,4,stdpaint);
+//        stdcanvas3.drawCircle(50,10,4,stdpaint);
+//
+//        stdcanvas3.drawCircle(10,30,4,stdpaint);
+//        stdcanvas3.drawCircle(30,30,4,stdpaint);
+//        stdcanvas3.drawCircle(50,30,4,stdpaint);
+//
+//        stdcanvas3.drawCircle(10,50,4,stdpaint);
+//        stdcanvas3.drawCircle(30,50,4,stdpaint);
+//        stdcanvas3.drawCircle(50,50,4,stdpaint);
+//
+//        //<0.5
+//        stdcanvas4.drawRect(0,0,60,60,stdpaint);
+//
+//
+//        createImages(document, bm1, 180, 105, 20, 20);
+//        createImages(document, bm2, 180, 90, 20, 20);
+//        createImages(document, bm3, 180, 75, 20, 20);
+//        createImages(document, bm4, 180, 60, 20, 20);
+//
+//        createHeadings(cb,200,115,"< 5%",10,"normal");
+//        createHeadings(cb,200,100,"< 2%",10,"normal");
+//        createHeadings(cb,200,85," < 1%",10,"normal");
+//        createHeadings(cb,200,70,"< 0.5%",10,"normal");
+//    }
+    private void VFI_MD_PSD_GHT_Box(Document document, PdfContentByte cb) {
+        Rectangle rectangle2 = new Rectangle(385, 300, 580, 250);
+        rectangle2.setBorder(Rectangle.BOX);
+        rectangle2.setBorderColor(BaseColor.BLACK);
+        rectangle2.setBorderWidth(1);
+        cb.rectangle(rectangle2);
+
+        createHeadings(cb, 390, 290, "Visual Field Index (VFI)", 9, "bold");
+        createHeadings(cb, 540, 290, "" + visualFieldIndex + "%", 9, "normal");
+
+        createHeadings(cb, 390, 280, "Mean Deviation (MD)", 9, "bold");
+        createHeadings(cb, 540, 280, meanDeviation + " dB", 9, "normal");
+
+        createHeadings(cb, 390, 270, "Pattern Standard Deviation (PSD)", 9, "bold");
+        createHeadings(cb, 540, 270, patternStandardDeviation + " dB", 9, "normal");
+
+
+        createHeadings(cb, 390, 255, "GHT", 9, "bold");
+        createHeadings(cb, 440, 255, ght, 9, "normal");
+
+
+    }
+
+    private void eye_tracking_box(Document document, PdfContentByte cb) {
+        Rectangle rectangle5 = new Rectangle(385, 180, 580, 230);
+        rectangle5.setBorder(Rectangle.BOX);
+        rectangle5.setBorderColor(BaseColor.BLACK);
+        rectangle5.setBorderWidth(1);
+        cb.rectangle(rectangle5);
+
+        createHeadings(cb, 390, 220, "Eye tracking Parameters", 9, "bold");
+        createHeadings(cb, 390, 205, "Eye Tracking:  " + eyeTracking, 9, "normal");
+
+        createHeadings(cb, 390, 195, "Looked Away:  " + lookedAway, 9, "normal");
+        //createHeadings(cb, 390, 185,"No. of Blinks:  "+ TemporaryVariables.getLookedAway(),9,"normal");
+
+    }
+
+    //    private void additional_notes_data(Document document, PdfContentByte cb){
+//        if(!patientAdditionalNotes.equals("NA") && !patientAdditionalNotes.equals("")) {
+//            createHeadings(cb,390,155,"Additional Comments",9,"bold");
+//            Font font = FontFactory.getFont("res/font/product_sans_medium.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED, 9, Font.NORMAL, BaseColor.BLACK);
+//            Rectangle rect = new Rectangle(390, 100, 580, 150);
+//            ColumnText ct = new ColumnText(docWriter.getDirectContent());
+//            ct.setSimpleColumn(rect);
+//            ct.addElement(new Paragraph(patientAdditionalNotes, font));
+//            try {
+//                ct.go();
+//            } catch (DocumentException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
+    private void footer(Document document, PdfContentByte cb) {
+
+        createHeadings(cb, 50, 45, "Disclaimer: This report is only indicative and not conclusive, please refer to an expert before further action/ medication.", 9, "normal");
+        //createHeadings(cb, 30,  30, "iVA -Intelligent Vision Analyzer " + " | Software: " +software_version +" | Hardware: "+hardware_version, 9, "normal");
+        createHeadings(cb, 390, 30, "Developed by Alfaleus", 9, "normal");
+
+        Rectangle rectangle4 = new Rectangle(0, 0, 800, 20);
+        BaseColor myColor = new BaseColor(1, 194, 193);
+        rectangle4.setBackgroundColor(myColor);
+        cb.rectangle(rectangle4);
+
+    }
+
+    private void createImages(Document document, Bitmap bmp, float xPosition, float yPosition, float xSize, float ySize) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        Image image = null;
         try {
-            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".provider", file);
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(uri, "application/pdf");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, "No PDF viewer app installed", Toast.LENGTH_SHORT).show();
+            image = Image.getInstance(stream.toByteArray());
+        } catch (BadElementException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (image != null) {
+            image.setAbsolutePosition(xPosition, yPosition);
+            image.scaleToFit(xSize, ySize);
+        }
+        try {
+            document.add(image);
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String savePdf() {
+        SimpleDateFormat s = new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss");
+        String format = s.format(new Date());
+        String pdfFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + format + "scannedData.pdf";
+        File file = new File(pdfFile);
+
+        OutputStream output = null;
+        try {
+            output = new FileOutputStream(file);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        Document document = new Document(PageSize.A4, 36, 36, 36, 36); // A4 size with 36 unit margins
+        PdfWriter docWriter = null;
+        try {
+            docWriter = PdfWriter.getInstance(document, output);
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        }
+
+        document.open();
+        initializeFonts();
+
+        PdfContentByte cb = docWriter.getDirectContent();
+
+        // BORDER TOP
+        Rectangle rectangle = new Rectangle(25, 725, 575, 760);
+        rectangle.setBorder(Rectangle.BOX);
+        rectangle.setBorderColor(BaseColor.BLACK);
+        rectangle.setBorderWidth(1);
+        cb.rectangle(rectangle);
+
+        // Add content here
+        pdf_logo_and_details(document, cb);
+        pdf_name_mrn_box(document, cb);
+        pdf_details_col_1(document, cb);
+        pdf_details_col_2(document, cb);
+        pdf_details_col_3(document,cb);
+        pdf_details_col_4(document, cb);
+        // Uncomment and adjust as needed
+        // threshold_range_plot(document, cb);
+        // createImages(document, totalDeviationBmp1, 30, 250, 150, 155);
+        // createHeadings(cb, 75, 235, "Total Deviation", 9, "normal");
+        // createImages(document, totalDeviationBmp2, 30, 80, 150, 155);
+        // createImages(document, patternDeviationBmp1, 210, 250, 150, 155);
+        // createHeadings(cb, 260, 235, "Pattern Deviation", 9, "normal");
+        // createImages(document, patternDeviationBmp2, 210, 80, 150, 155);
+        // p_value_range_plotting(document, cb);
+        VFI_MD_PSD_GHT_Box(document, cb);
+        eye_tracking_box(document, cb);
+        // additional_notes_data(document, cb);
+        footer(document, cb);
+
+        document.close();
+
+        try {
+            output.flush();
+            output.close();
+            docWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return pdfFile;
+    }
+
+
+    private void viewPdf(String pdfFilePath) {
+        try {
+            File pdfFile = new File(pdfFilePath);
+
+            // Get URI for the file using FileProvider
+            Uri uri = FileProvider.getUriForFile(this,
+                    getPackageName() + ".provider", pdfFile);
+
+            // Check if URI is not null
+            if (uri != null) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(uri, "application/pdf");
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                // Verify that there are apps available to open this intent
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "No PDF viewer app installed", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(this, "Failed to get PDF URI", Toast.LENGTH_SHORT).show();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Error opening PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
+
+
 }
