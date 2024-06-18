@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -100,7 +101,9 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String ght;
     private String eyeTracking;
     private String lookedAway;
-    int[] INTENSITY_RESULT;
+    //int[] INTENSITY_RESULT;
+    public static int[] INTENSITY_RESULT = new int[65];
+
 
     _24_2_Coordinates coordinate24_2;    // Coordinates class
     double[][] small_rect_r = {           //Corner rectangles : right eye
@@ -218,6 +221,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 falsePOSError = parsedData.get("False POS Error");
                 falseNEGError = parsedData.get("False NEG Error");
                 testDuration = parsedData.get("Test Duration");
+                Log.d("testDuration","duration"+ testDuration);
                 fovea = parsedData.get("Fovea");
                 fixationTarget = parsedData.get("Fixation Target");
                 fixationMonitor = parsedData.get("Fixation Monitor");
@@ -225,10 +229,13 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 visualAcuity = parsedData.get("Visual Acuity");
                 power = parsedData.get("Power");
                 date = parsedData.get("Date");
+                Log.d("testDuration3","date"+ date);
                 time = parsedData.get("Time");
+                Log.d("testDuration2","time"+ time);
                 age = parsedData.get("Age");
                 gender = parsedData.get("Gender");
                 intensity = parsedData.get("INTENSITY");
+                Log.d("hello","intensity" + intensity);
                 totalDeviation = parsedData.get("Total deviation");
                 patternDeviation = parsedData.get("Pattern Deviation");
                 visualFieldIndex = parsedData.get("Visual Field Index (VFI)");
@@ -238,10 +245,8 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 eyeTracking = parsedData.get("Eye Tracking");
                 lookedAway = parsedData.get("Looked Away");
 
-               //
                 calculate();
                 try {
-
                     createPdfWrapper();
                 } catch (FileNotFoundException e) {
                     throw new RuntimeException(e);
@@ -256,7 +261,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 String[] lines = data.split("\n");
 
                 for (String line : lines) {
-                    String[] keyValue = line.split(":");
+                    String[] keyValue = line.split(":",2);
                     if (keyValue.length == 2) {
                         String key = keyValue[0].trim(); // Trim key to remove any leading or trailing whitespace
                         String value = keyValue[1].trim(); // Trim value to remove any leading or trailing whitespace
@@ -310,10 +315,9 @@ public class ScanQRCodeActivity extends AppCompatActivity {
 
          if (intensity != null) {
              intensityParts = intensity.split(",");
+             Log.d("hello2","intensity"+ Arrays.toString(intensityParts));
+             Log.d("mello2", "Number of items inside intensityParts: " + intensityParts.length);
 
-             // Now you can proceed with further processing using intensityParts array
-             // For example, iterate over intensityParts or perform operations based on its content
-             // Example:
              for (String part : intensityParts) {
                  // Process each part as needed
              }
@@ -322,9 +326,13 @@ public class ScanQRCodeActivity extends AppCompatActivity {
              Log.e("ScanQRCodeActivity", "Intensity is null");
 
          }
-         for (int i = 0; i < intensityParts.length; i++) {
+         int limit = Math.min(intensityParts.length, INTENSITY_RESULT.length);
+
+         for (int i = 0; i < limit; i++) {
              try {
                  INTENSITY_RESULT[i] = Integer.parseInt(intensityParts[i].trim());
+                 Log.d("hello3", "intensity: " + Arrays.toString(INTENSITY_RESULT));
+                 Log.d("mello3", "Number of intensityResult: " + INTENSITY_RESULT.length);
              } catch (NumberFormatException e) {
                  // Handle if the string part cannot be parsed as an integer
                  e.printStackTrace();
@@ -759,7 +767,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         createHeadings(cb, 220, 678, "Blind Spot Test", 9, "normal");
 
         createHeadings(cb, 140, 666, "Stimulus Size", 9, "bold");
-        createHeadings(cb, 220, 666, "Goldmann III", 9, "normal");
+        createHeadings(cb, 220, 666, stimulusSize, 9, "normal");
 //        if (stimulusSize.equals("Goldmann III")) {
 //        createHeadings(cb, 220, 666, "Goldmann III", 9, "normal");
 //
