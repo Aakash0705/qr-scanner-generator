@@ -9,9 +9,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import com.example.qr_code_generatorscanner.NormativeData._24_2_NormativeData;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -70,6 +72,11 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String intensity;
     private static Paint paint;
 
+    double psd = 0;
+    String software_version="", hardware_version="";
+
+
+
     private Button selectFromGalleryBtn;
     private Bitmap bitmap_mapped;
     Bitmap stdBmp, totalDeviationBmp1, totalDeviationBmp2, patternDeviationBmp1, patternDeviationBmp2;
@@ -105,6 +112,13 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String ght;
     private String eyeTracking;
     private String lookedAway;
+
+    SharedPreferences sharedPreferences;
+    private static final String MY_PREFS_NAME = "METADATA_PS_OPERATOR";
+
+
+
+    private Canvas canvas;
     //int[] INTENSITY_RESULT;
     public static int[] INTENSITY_RESULT = new int[65];
     public static String[] intensityParts = new String[65];
@@ -179,9 +193,16 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         scannerLiveView = findViewById(R.id.camView);
         scannedTextView = findViewById(R.id.scannedData);
         selectFromGalleryBtn = findViewById(R.id.selectFromGalleryBtn);
+        bitmap_mapped = Bitmap.createBitmap(1200, 1200, Bitmap.Config.ARGB_8888);
         paint = new Paint();
+        canvas = new Canvas(bitmap_mapped);
+
         coordinate24_2 = new _24_2_Coordinates(this);
 
+        sharedPreferences = getSharedPreferences(MY_PREFS_NAME,MODE_PRIVATE);
+
+        software_version = TemporaryVariables.getSoftwareVersion();
+        hardware_version = sharedPreferences.getString("hardwareVersion","");
 
 
 
@@ -290,6 +311,162 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         selectFromGalleryBtn.setOnClickListener(v -> selectImageFromGallery());
     }
 
+    private void getMappedBitmap(){
+        int width = 4;
+        float left = 600 - width / 2;
+        float top = 0;
+        float right = left + width;
+        float bottom = 1200;
+
+        canvas.drawRect(left, top, right, bottom, paint);
+        left = 0;
+        top = 600 - width / 2;
+        right = 1200;
+        bottom = top + width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        int distancePoint_10degree = (int) 183.33;
+        int distancePoint_20degree = (int) (183.33 * 2);
+        int distancePoint_30degree = (int) (183.33 * 3);
+
+        left = 600 + distancePoint_10degree - width;
+        top = 600 - 3 * width;
+        right = left + width;
+        bottom = top + 6 * width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 + distancePoint_20degree - width;
+        top = 600 - 3 * width;
+        right = left + width;
+        bottom = top + 6 * width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 + distancePoint_30degree - width;
+        top = 600 - 3 * width;
+        right = left + width;
+        bottom = top + 6 * width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 - distancePoint_10degree - width;
+        top = 600 - 3 * width;
+        right = left + width;
+        bottom = top + 6 * width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 - distancePoint_20degree - width;
+        top = 600 - 3 * width;
+        right = left + width;
+        bottom = top + 6 * width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 - distancePoint_30degree - width;
+        top = 600 - 3 * width;
+        right = left + width;
+        bottom = top + 6 * width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 - 3 * width;
+        top = 600 - distancePoint_10degree - width;
+        right = left + 6 * width;
+        bottom = top + width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 - 3 * width;
+        top = 600 - distancePoint_20degree - width;
+        right = left + 6 * width;
+        bottom = top + width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 - 3 * width;
+        top = 600 - distancePoint_30degree - width;
+        right = left + 6 * width;
+        bottom = top + width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 - 3 * width;
+        top = 600 + distancePoint_10degree - width;
+        right = left + 6 * width;
+        bottom = top + width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 - 3 * width;
+        top = 600 + distancePoint_20degree - width;
+        right = left + 6 * width;
+        bottom = top + width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        left = 600 - 3 * width;
+        top = 600 + distancePoint_30degree - width;
+        right = left + 6 * width;
+        bottom = top + width;
+        canvas.drawRect(left, top, right, bottom, paint);
+
+
+        for (int i = 0; i < 55; i++) {
+            int[] coor = coordinate24_2.getCoordinates(i, String.valueOf(testEye));
+            int INTENSITY = INTENSITY_RESULT[i];
+            if (INTENSITY < 0)
+                INTENSITY = 0;
+
+            ABCDE(i);
+            if (testEye.equals("Right")) {
+                draw_dots_rectangle(coor[0] + 600 - 55, coor[1] + 600 - 55, INTENSITY, i);
+            }
+
+            else if (testEye.equals("Left")) {
+                draw_dots_rectangle(coor[0] + 600 - 55, coor[1] + 600 - 55, INTENSITY, i);
+            }
+        }
+
+        if (testEye.equals("Right")) {
+            small_rect_r[0][2] = getAverageContrast(INTENSITY_RESULT[45], INTENSITY_RESULT[51], INTENSITY_RESULT[17]);
+            small_rect_r[1][2] = getAverageContrast(INTENSITY_RESULT[54], INTENSITY_RESULT[50], INTENSITY_RESULT[12]);
+            small_rect_r[2][2] = getAverageContrast(INTENSITY_RESULT[37], INTENSITY_RESULT[45], INTENSITY_RESULT[18]);
+            small_rect_r[3][2] = getAverageContrast(INTENSITY_RESULT[50], INTENSITY_RESULT[44], INTENSITY_RESULT[11]);
+            small_rect_r[4][2] = getAverageContrast(INTENSITY_RESULT[11], INTENSITY_RESULT[5], INTENSITY_RESULT[23]);
+            small_rect_r[5][2] = getAverageContrast(INTENSITY_RESULT[18], INTENSITY_RESULT[10], INTENSITY_RESULT[6]);
+            small_rect_r[6][2] = getAverageContrast(INTENSITY_RESULT[5], INTENSITY_RESULT[1], INTENSITY_RESULT[24]);
+            small_rect_r[7][2] = getAverageContrast(INTENSITY_RESULT[4], INTENSITY_RESULT[10], INTENSITY_RESULT[5]);
+            small_rect_r[8][2] = getAverageContrast(INTENSITY_RESULT[28], INTENSITY_RESULT[37], INTENSITY_RESULT[19]);
+            small_rect_r[9][2] = getAverageContrast(INTENSITY_RESULT[11], INTENSITY_RESULT[19], INTENSITY_RESULT[22]);
+        } else {
+            small_rect_l[0][2] = getAverageContrast(INTENSITY_RESULT[45], INTENSITY_RESULT[51], INTENSITY_RESULT[17]);
+            small_rect_l[1][2] = getAverageContrast(INTENSITY_RESULT[54], INTENSITY_RESULT[50], INTENSITY_RESULT[12]);
+            small_rect_l[2][2] = getAverageContrast(INTENSITY_RESULT[37], INTENSITY_RESULT[45], INTENSITY_RESULT[18]);
+            small_rect_l[3][2] = getAverageContrast(INTENSITY_RESULT[50], INTENSITY_RESULT[44], INTENSITY_RESULT[11]);
+            small_rect_l[4][2] = getAverageContrast(INTENSITY_RESULT[11], INTENSITY_RESULT[5], INTENSITY_RESULT[23]);
+            small_rect_l[5][2] = getAverageContrast(INTENSITY_RESULT[18], INTENSITY_RESULT[10], INTENSITY_RESULT[6]);
+            small_rect_l[6][2] = getAverageContrast(INTENSITY_RESULT[5], INTENSITY_RESULT[1], INTENSITY_RESULT[24]);
+            small_rect_l[7][2] = getAverageContrast(INTENSITY_RESULT[4], INTENSITY_RESULT[10], INTENSITY_RESULT[5]);
+            small_rect_l[8][2] = getAverageContrast(INTENSITY_RESULT[28], INTENSITY_RESULT[44], INTENSITY_RESULT[10]);
+            small_rect_l[9][2] = getAverageContrast(INTENSITY_RESULT[18], INTENSITY_RESULT[19], INTENSITY_RESULT[7]);
+        }
+
+        for (int i = 0; i < 10; i++) {
+            if (testEye.equals("Right")) {
+                draw_dots_small_rectangle((int) small_rect_r[i][0], (int) small_rect_r[i][1], i);
+            } else {
+                draw_dots_small_rectangle((int) small_rect_l[i][0], (int) small_rect_l[i][1], i);
+            }
+        }
+        /*
+        paint.setColor(Color.BLACK);
+        if (testEye.equals("Right")){
+            double BS_degree = (BS_Device-630)/6.5;
+            double BS_Screen = BS_degree*18.33;
+            Log.d("BS_",BS_Device+"-"+BS_degree+"-"+BS_Screen);
+            canvas.drawOval((float)(BS_Screen-2.5*18.33)+600, (float)(-2.25*18.33)+600,(float)(BS_Screen+18.33*2.5)+600, (float)(5.25*18.33)+600, paint);
+        }
+        else{
+            double BS_degree = BS_Device/6.5;
+            double BS_Screen = BS_degree*18.33;
+            Log.d("BS_",BS_Device+"-"+BS_degree+"-"+BS_Screen);
+            canvas.drawOval((float)(-BS_Screen-2.5*18.33)+600, (float)(-2.25*18.33)+600,(float)(-BS_Screen+18.33*2.5)+600, (float)(5.25*18.33)+600, paint);
+        }
+        */
+
+    }
+
     private void setIntensityPattern() {
 
         Paint stdpaint = new Paint();
@@ -336,6 +513,1432 @@ public class ScanQRCodeActivity extends AppCompatActivity {
             Log.e("ScanQRCodeActivity", "coordinate24_2 is null");
         }
     }
+    public void ABCDE(int a){
+        if (testEye.equals("Left")) {
+            if (a == 1) {
+                A = INTENSITY_RESULT[2];
+                B = INTENSITY_RESULT[6];
+                C = INTENSITY_RESULT[1];
+                D = INTENSITY_RESULT[1];
+                E = INTENSITY_RESULT[1];
+            } else if (a == 2) {
+                A = INTENSITY_RESULT[3];
+                B = INTENSITY_RESULT[7];
+                C = INTENSITY_RESULT[2];
+                D = INTENSITY_RESULT[2];
+                E = INTENSITY_RESULT[1];
+            } else if (a == 3) {
+                A = INTENSITY_RESULT[4];
+                B = INTENSITY_RESULT[8];
+                C = INTENSITY_RESULT[3];
+                D = INTENSITY_RESULT[3];
+                E = INTENSITY_RESULT[2];
+            } else if (a == 4) {
+                A = INTENSITY_RESULT[5];
+                B = INTENSITY_RESULT[9];
+                C = INTENSITY_RESULT[4];
+                D = INTENSITY_RESULT[4];
+                E = INTENSITY_RESULT[3];
+            } else if (a == 5) {
+                A = INTENSITY_RESULT[6];
+                B = INTENSITY_RESULT[12];
+                C = INTENSITY_RESULT[5];
+                D = INTENSITY_RESULT[5];
+                E = INTENSITY_RESULT[5];
+            } else if (a == 6) {
+                A = INTENSITY_RESULT[7];
+                B = INTENSITY_RESULT[13];
+                C = INTENSITY_RESULT[6];
+                D = INTENSITY_RESULT[1];
+                E = INTENSITY_RESULT[5];
+            } else if (a == 7) {
+                A = INTENSITY_RESULT[8];
+                B = INTENSITY_RESULT[14];
+                C = INTENSITY_RESULT[7];
+                D = INTENSITY_RESULT[2];
+                E = INTENSITY_RESULT[6];
+            } else if (a == 8) {
+                A = INTENSITY_RESULT[9];
+                B = INTENSITY_RESULT[15];
+                C = INTENSITY_RESULT[8];
+                D = INTENSITY_RESULT[3];
+                E = INTENSITY_RESULT[7];
+            } else if (a == 9) {
+                A = INTENSITY_RESULT[10];
+                B = INTENSITY_RESULT[16];
+                C = INTENSITY_RESULT[9];
+                D = INTENSITY_RESULT[4];
+                E = INTENSITY_RESULT[8];
+            } else if (a == 10) {
+                A = INTENSITY_RESULT[5];
+                B = INTENSITY_RESULT[17];
+                C = INTENSITY_RESULT[10];
+                D = INTENSITY_RESULT[5];
+                E = INTENSITY_RESULT[9];
+            } else if (a == 11) {
+                A = INTENSITY_RESULT[12];
+                B = INTENSITY_RESULT[20];
+                C = INTENSITY_RESULT[11];
+                D = INTENSITY_RESULT[11];
+                E = INTENSITY_RESULT[11];
+            } else if (a == 12) {
+                A = INTENSITY_RESULT[13];
+                B = INTENSITY_RESULT[21];
+                C = INTENSITY_RESULT[12];
+                D = INTENSITY_RESULT[5];
+                E = INTENSITY_RESULT[11];
+            } else if (a == 13) {
+                A = INTENSITY_RESULT[14];
+                B = INTENSITY_RESULT[22];
+                C = INTENSITY_RESULT[13];
+                D = INTENSITY_RESULT[6];
+                E = INTENSITY_RESULT[12];
+            } else if (a == 14) {
+                A = INTENSITY_RESULT[15];
+                B = INTENSITY_RESULT[23];
+                C = INTENSITY_RESULT[14];
+                D = INTENSITY_RESULT[7];
+                E = INTENSITY_RESULT[13];
+            } else if (a == 15) {
+                A = INTENSITY_RESULT[16];
+                B = INTENSITY_RESULT[24];
+                C = INTENSITY_RESULT[15];
+                D = INTENSITY_RESULT[8];
+                E = INTENSITY_RESULT[14];
+            } else if (a == 16) {
+                A = INTENSITY_RESULT[17];
+                B = INTENSITY_RESULT[25];
+                C = INTENSITY_RESULT[16];
+                D = INTENSITY_RESULT[9];
+                E = INTENSITY_RESULT[15];
+            } else if (a == 17) {
+                A = INTENSITY_RESULT[18];
+                B = INTENSITY_RESULT[26];
+                C = INTENSITY_RESULT[17];
+                D = INTENSITY_RESULT[10];
+                E = INTENSITY_RESULT[16];
+            } else if (a == 18) {
+                A = INTENSITY_RESULT[18];
+                B = INTENSITY_RESULT[27];
+                C = INTENSITY_RESULT[18];
+                D = INTENSITY_RESULT[18];
+                E = INTENSITY_RESULT[17];
+            } else if (a == 19) {
+                A = INTENSITY_RESULT[19];
+                B = INTENSITY_RESULT[28];
+                C = INTENSITY_RESULT[19];
+                D = INTENSITY_RESULT[19];
+                E = INTENSITY_RESULT[27];
+            } else if (a == 20) {
+                A = INTENSITY_RESULT[21];
+                B = INTENSITY_RESULT[29];
+                C = INTENSITY_RESULT[20];
+                D = INTENSITY_RESULT[11];
+                E = INTENSITY_RESULT[20];
+            } else if (a == 21) {
+                A = INTENSITY_RESULT[22];
+                B = INTENSITY_RESULT[30];
+                C = INTENSITY_RESULT[21];
+                D = INTENSITY_RESULT[12];
+                E = INTENSITY_RESULT[20];
+            } else if (a == 22) {
+                A = INTENSITY_RESULT[23];
+                B = INTENSITY_RESULT[31];
+                C = INTENSITY_RESULT[22];
+                D = INTENSITY_RESULT[13];
+                E = INTENSITY_RESULT[21];
+            } else if (a == 23) {
+                A = INTENSITY_RESULT[24];
+                B = INTENSITY_RESULT[32];
+                C = INTENSITY_RESULT[23];
+                D = INTENSITY_RESULT[14];
+                E = INTENSITY_RESULT[22];
+            } else if (a == 24) {
+                A = INTENSITY_RESULT[25];
+                B = INTENSITY_RESULT[33];
+                C = INTENSITY_RESULT[24];
+                D = INTENSITY_RESULT[15];
+                E = INTENSITY_RESULT[23];
+            } else if (a == 25) {
+                A = INTENSITY_RESULT[26];
+                B = INTENSITY_RESULT[34];
+                C = INTENSITY_RESULT[25];
+                D = INTENSITY_RESULT[16];
+                E = INTENSITY_RESULT[24];
+            } else if (a == 26) {
+                A = INTENSITY_RESULT[27];
+                B = INTENSITY_RESULT[35];
+                C = INTENSITY_RESULT[26];
+                D = INTENSITY_RESULT[17];
+                E = INTENSITY_RESULT[25];
+            } else if (a == 27) {
+                A = INTENSITY_RESULT[19];
+                B = INTENSITY_RESULT[36];
+                C = INTENSITY_RESULT[27];
+                D = INTENSITY_RESULT[18];
+                E = INTENSITY_RESULT[26];
+            } else if (a == 28) {
+                A = INTENSITY_RESULT[28];
+                B = INTENSITY_RESULT[10];
+                C = INTENSITY_RESULT[28];
+                D = INTENSITY_RESULT[19];
+                E = INTENSITY_RESULT[36];
+            } else if (a == 29) {
+                A = INTENSITY_RESULT[30];
+                B = INTENSITY_RESULT[37];
+                C = INTENSITY_RESULT[29];
+                D = INTENSITY_RESULT[20];
+                E = INTENSITY_RESULT[29];
+            } else if (a == 30) {
+                A = INTENSITY_RESULT[31];
+                B = INTENSITY_RESULT[38];
+                C = INTENSITY_RESULT[30];
+                D = INTENSITY_RESULT[21];
+                E = INTENSITY_RESULT[29];
+            } else if (a == 31) {
+                A = INTENSITY_RESULT[32];
+                B = INTENSITY_RESULT[39];
+                C = INTENSITY_RESULT[31];
+                D = INTENSITY_RESULT[22];
+                E = INTENSITY_RESULT[30];
+            } else if (a == 32) {
+                A = INTENSITY_RESULT[33];
+                B = INTENSITY_RESULT[40];
+                C = INTENSITY_RESULT[32];
+                D = INTENSITY_RESULT[23];
+                E = INTENSITY_RESULT[31];
+            } else if (a == 33) {
+                A = INTENSITY_RESULT[34];
+                B = INTENSITY_RESULT[41];
+                C = INTENSITY_RESULT[33];
+                D = INTENSITY_RESULT[24];
+                E = INTENSITY_RESULT[32];
+            } else if (a == 34) {
+                A = INTENSITY_RESULT[35];
+                B = INTENSITY_RESULT[42];
+                C = INTENSITY_RESULT[34];
+                D = INTENSITY_RESULT[25];
+                E = INTENSITY_RESULT[33];
+            } else if (a == 35) {
+                A = INTENSITY_RESULT[36];
+                B = INTENSITY_RESULT[43];
+                C = INTENSITY_RESULT[35];
+                D = INTENSITY_RESULT[26];
+                E = INTENSITY_RESULT[34];
+            } else if (a == 36) {
+                A = INTENSITY_RESULT[28];
+                B = INTENSITY_RESULT[44];
+                C = INTENSITY_RESULT[36];
+                D = INTENSITY_RESULT[27];
+                E = INTENSITY_RESULT[35];
+            } else if (a == 37) {
+                A = INTENSITY_RESULT[38];
+                B = INTENSITY_RESULT[37];
+                C = INTENSITY_RESULT[37];
+                D = INTENSITY_RESULT[29];
+                E = INTENSITY_RESULT[37];
+            } else if (a == 38) {
+                A = INTENSITY_RESULT[39];
+                B = INTENSITY_RESULT[45];
+                C = INTENSITY_RESULT[38];
+                D = INTENSITY_RESULT[30];
+                E = INTENSITY_RESULT[37];
+            } else if (a == 39) {
+                A = INTENSITY_RESULT[40];
+                B = INTENSITY_RESULT[46];
+                C = INTENSITY_RESULT[39];
+                D = INTENSITY_RESULT[31];
+                E = INTENSITY_RESULT[38];
+            } else if (a == 40) {
+                A = INTENSITY_RESULT[41];
+                B = INTENSITY_RESULT[47];
+                C = INTENSITY_RESULT[40];
+                D = INTENSITY_RESULT[32];
+                E = INTENSITY_RESULT[39];
+            } else if (a == 41) {
+                A = INTENSITY_RESULT[42];
+                B = INTENSITY_RESULT[48];
+                C = INTENSITY_RESULT[41];
+                D = INTENSITY_RESULT[33];
+                E = INTENSITY_RESULT[40];
+            } else if (a == 42) {
+                A = INTENSITY_RESULT[43];
+                B = INTENSITY_RESULT[49];
+                C = INTENSITY_RESULT[42];
+                D = INTENSITY_RESULT[34];
+                E = INTENSITY_RESULT[41];
+            } else if (a == 43) {
+                A = INTENSITY_RESULT[44];
+                B = INTENSITY_RESULT[50];
+                C = INTENSITY_RESULT[43];
+                D = INTENSITY_RESULT[35];
+                E = INTENSITY_RESULT[42];
+            } else if (a == 44) {
+                A = INTENSITY_RESULT[44];
+                B = INTENSITY_RESULT[44];
+                C = INTENSITY_RESULT[44];
+                D = INTENSITY_RESULT[36];
+                E = INTENSITY_RESULT[43];
+            } else if (a == 45) {
+                A = INTENSITY_RESULT[46];
+                B = INTENSITY_RESULT[45];
+                C = INTENSITY_RESULT[45];
+                D = INTENSITY_RESULT[38];
+                E = INTENSITY_RESULT[45];
+            } else if (a == 46) {
+                A = INTENSITY_RESULT[47];
+                B = INTENSITY_RESULT[51];
+                C = INTENSITY_RESULT[46];
+                D = INTENSITY_RESULT[39];
+                E = INTENSITY_RESULT[45];
+            } else if (a == 47) {
+                A = INTENSITY_RESULT[48];
+                B = INTENSITY_RESULT[52];
+                C = INTENSITY_RESULT[47];
+                D = INTENSITY_RESULT[40];
+                E = INTENSITY_RESULT[46];
+            } else if (a == 48) {
+                A = INTENSITY_RESULT[49];
+                B = INTENSITY_RESULT[53];
+                C = INTENSITY_RESULT[48];
+                D = INTENSITY_RESULT[41];
+                E = INTENSITY_RESULT[47];
+            } else if (a == 49) {
+                A = INTENSITY_RESULT[50];
+                B = INTENSITY_RESULT[54];
+                C = INTENSITY_RESULT[49];
+                D = INTENSITY_RESULT[42];
+                E = INTENSITY_RESULT[48];
+            } else if (a == 50) {
+                A = INTENSITY_RESULT[50];
+                B = INTENSITY_RESULT[50];
+                C = INTENSITY_RESULT[50];
+                D = INTENSITY_RESULT[43];
+                E = INTENSITY_RESULT[49];
+            } else if (a == 51) {
+                A = INTENSITY_RESULT[52];
+                B = INTENSITY_RESULT[51];
+                C = INTENSITY_RESULT[51];
+                D = INTENSITY_RESULT[46];
+                E = INTENSITY_RESULT[51];
+            } else if (a == 52) {
+                A = INTENSITY_RESULT[53];
+                B = INTENSITY_RESULT[52];
+                C = INTENSITY_RESULT[52];
+                D = INTENSITY_RESULT[47];
+                E = INTENSITY_RESULT[51];
+            } else if (a == 53) {
+                A = INTENSITY_RESULT[54];
+                B = INTENSITY_RESULT[53];
+                C = INTENSITY_RESULT[53];
+                D = INTENSITY_RESULT[48];
+                E = INTENSITY_RESULT[52];
+            } else if (a == 54) {
+                A = INTENSITY_RESULT[54];
+                B = INTENSITY_RESULT[54];
+                C = INTENSITY_RESULT[54];
+                D = INTENSITY_RESULT[49];
+                E = INTENSITY_RESULT[53];
+            }
+        }
+        else if (testEye.equals("Right")) {
+            if (a == 1) {
+                A = INTENSITY_RESULT[2];
+                B = INTENSITY_RESULT[6];
+                C = INTENSITY_RESULT[1];
+                D = INTENSITY_RESULT[1];
+                E = INTENSITY_RESULT[1];
+            } else if (a == 2) {
+                A = INTENSITY_RESULT[3];
+                B = INTENSITY_RESULT[7];
+                C = INTENSITY_RESULT[2];
+                D = INTENSITY_RESULT[2];
+                E = INTENSITY_RESULT[1];
+            } else if (a == 3) {
+                A = INTENSITY_RESULT[4];
+                B = INTENSITY_RESULT[8];
+                C = INTENSITY_RESULT[3];
+                D = INTENSITY_RESULT[3];
+                E = INTENSITY_RESULT[2];
+            } else if (a == 4) {
+                A = INTENSITY_RESULT[4];
+                B = INTENSITY_RESULT[9];
+                C = INTENSITY_RESULT[4];
+                D = INTENSITY_RESULT[4];
+                E = INTENSITY_RESULT[3];
+            } else if (a == 5) {
+                A = INTENSITY_RESULT[6];
+                B = INTENSITY_RESULT[12];
+                C = INTENSITY_RESULT[5];
+                D = INTENSITY_RESULT[5];
+                E = INTENSITY_RESULT[5];
+            } else if (a == 6) {
+                A = INTENSITY_RESULT[7];
+                B = INTENSITY_RESULT[13];
+                C = INTENSITY_RESULT[6];
+                D = INTENSITY_RESULT[1];
+                E = INTENSITY_RESULT[5];
+            } else if (a == 7) {
+                A = INTENSITY_RESULT[8];
+                B = INTENSITY_RESULT[14];
+                C = INTENSITY_RESULT[7];
+                D = INTENSITY_RESULT[2];
+                E = INTENSITY_RESULT[6];
+            } else if (a == 8) {
+                A = INTENSITY_RESULT[9];
+                B = INTENSITY_RESULT[15];
+                C = INTENSITY_RESULT[8];
+                D = INTENSITY_RESULT[3];
+                E = INTENSITY_RESULT[7];
+            } else if (a == 9) {
+                A = INTENSITY_RESULT[10];
+                B = INTENSITY_RESULT[16];
+                C = INTENSITY_RESULT[9];
+                D = INTENSITY_RESULT[4];
+                E = INTENSITY_RESULT[8];
+            } else if (a == 10) {
+                A = INTENSITY_RESULT[10];
+                B = INTENSITY_RESULT[17];
+                C = INTENSITY_RESULT[10];
+                D = INTENSITY_RESULT[10];
+                E = INTENSITY_RESULT[9];
+            } else if (a == 11) {
+                A = INTENSITY_RESULT[12];
+                B = INTENSITY_RESULT[20];
+                C = INTENSITY_RESULT[11];
+                D = INTENSITY_RESULT[11];
+                E = INTENSITY_RESULT[11];
+            } else if (a == 12) {
+                A = INTENSITY_RESULT[13];
+                B = INTENSITY_RESULT[21];
+                C = INTENSITY_RESULT[12];
+                D = INTENSITY_RESULT[5];
+                E = INTENSITY_RESULT[11];
+            } else if (a == 13) {
+                A = INTENSITY_RESULT[14];
+                B = INTENSITY_RESULT[22];
+                C = INTENSITY_RESULT[13];
+                D = INTENSITY_RESULT[6];
+                E = INTENSITY_RESULT[12];
+            } else if (a == 14) {
+                A = INTENSITY_RESULT[15];
+                B = INTENSITY_RESULT[23];
+                C = INTENSITY_RESULT[14];
+                D = INTENSITY_RESULT[7];
+                E = INTENSITY_RESULT[13];
+            } else if (a == 15) {
+                A = INTENSITY_RESULT[16];
+                B = INTENSITY_RESULT[24];
+                C = INTENSITY_RESULT[15];
+                D = INTENSITY_RESULT[8];
+                E = INTENSITY_RESULT[14];
+            } else if (a == 16) {
+                A = INTENSITY_RESULT[17];
+                B = INTENSITY_RESULT[25];
+                C = INTENSITY_RESULT[16];
+                D = INTENSITY_RESULT[9];
+                E = INTENSITY_RESULT[15];
+            } else if (a == 17) {
+                A = INTENSITY_RESULT[18];
+                B = INTENSITY_RESULT[26];
+                C = INTENSITY_RESULT[17];
+                D = INTENSITY_RESULT[10];
+                E = INTENSITY_RESULT[16];
+            } else if (a == 18) {
+                A = INTENSITY_RESULT[18];
+                B = INTENSITY_RESULT[27];
+                C = INTENSITY_RESULT[18];
+                D = INTENSITY_RESULT[18];
+                E = INTENSITY_RESULT[17];
+            } else if (a == 19) {
+                A = INTENSITY_RESULT[20];
+                B = INTENSITY_RESULT[28];
+                C = INTENSITY_RESULT[19];
+                D = INTENSITY_RESULT[19];
+                E = INTENSITY_RESULT[19];
+            } else if (a == 20) {
+                A = INTENSITY_RESULT[21];
+                B = INTENSITY_RESULT[29];
+                C = INTENSITY_RESULT[20];
+                D = INTENSITY_RESULT[11];
+                E = INTENSITY_RESULT[19];
+            } else if (a == 21) {
+                A = INTENSITY_RESULT[22];
+                B = INTENSITY_RESULT[30];
+                C = INTENSITY_RESULT[21];
+                D = INTENSITY_RESULT[12];
+                E = INTENSITY_RESULT[20];
+            } else if (a == 22) {
+                A = INTENSITY_RESULT[23];
+                B = INTENSITY_RESULT[31];
+                C = INTENSITY_RESULT[22];
+                D = INTENSITY_RESULT[13];
+                E = INTENSITY_RESULT[21];
+            } else if (a == 23) {
+                A = INTENSITY_RESULT[24];
+                B = INTENSITY_RESULT[32];
+                C = INTENSITY_RESULT[23];
+                D = INTENSITY_RESULT[14];
+                E = INTENSITY_RESULT[22];
+            } else if (a == 24) {
+                A = INTENSITY_RESULT[25];
+                B = INTENSITY_RESULT[33];
+                C = INTENSITY_RESULT[24];
+                D = INTENSITY_RESULT[15];
+                E = INTENSITY_RESULT[23];
+            } else if (a == 25) {
+                A = INTENSITY_RESULT[26];
+                B = INTENSITY_RESULT[34];
+                C = INTENSITY_RESULT[25];
+                D = INTENSITY_RESULT[16];
+                E = INTENSITY_RESULT[24];
+            } else if (a == 26) {
+                A = INTENSITY_RESULT[27];
+                B = INTENSITY_RESULT[35];
+                C = INTENSITY_RESULT[26];
+                D = INTENSITY_RESULT[17];
+                E = INTENSITY_RESULT[25];
+            } else if (a == 27) {
+                A = INTENSITY_RESULT[27];
+                B = INTENSITY_RESULT[36];
+                C = INTENSITY_RESULT[27];
+                D = INTENSITY_RESULT[18];
+                E = INTENSITY_RESULT[26];
+            } else if (a == 28) {
+                A = INTENSITY_RESULT[29];
+                B = INTENSITY_RESULT[28];
+                C = INTENSITY_RESULT[28];
+                D = INTENSITY_RESULT[19];
+                E = INTENSITY_RESULT[28];
+            } else if (a == 29) {
+                A = INTENSITY_RESULT[30];
+                B = INTENSITY_RESULT[37];
+                C = INTENSITY_RESULT[29];
+                D = INTENSITY_RESULT[20];
+                E = INTENSITY_RESULT[28];
+            } else if (a == 30) {
+                A = INTENSITY_RESULT[31];
+                B = INTENSITY_RESULT[38];
+                C = INTENSITY_RESULT[30];
+                D = INTENSITY_RESULT[21];
+                E = INTENSITY_RESULT[29];
+            } else if (a == 31) {
+                A = INTENSITY_RESULT[32];
+                B = INTENSITY_RESULT[39];
+                C = INTENSITY_RESULT[31];
+                D = INTENSITY_RESULT[22];
+                E = INTENSITY_RESULT[30];
+            } else if (a == 32) {
+                A = INTENSITY_RESULT[33];
+                B = INTENSITY_RESULT[40];
+                C = INTENSITY_RESULT[32];
+                D = INTENSITY_RESULT[23];
+                E = INTENSITY_RESULT[31];
+            } else if (a == 33) {
+                A = INTENSITY_RESULT[34];
+                B = INTENSITY_RESULT[41];
+                C = INTENSITY_RESULT[33];
+                D = INTENSITY_RESULT[24];
+                E = INTENSITY_RESULT[32];
+            } else if (a == 34) {
+                A = INTENSITY_RESULT[35];
+                B = INTENSITY_RESULT[42];
+                C = INTENSITY_RESULT[34];
+                D = INTENSITY_RESULT[25];
+                E = INTENSITY_RESULT[33];
+            } else if (a == 35) {
+                A = INTENSITY_RESULT[36];
+                B = INTENSITY_RESULT[43];
+                C = INTENSITY_RESULT[35];
+                D = INTENSITY_RESULT[26];
+                E = INTENSITY_RESULT[34];
+            } else if (a == 36) {
+                A = INTENSITY_RESULT[36];
+                B = INTENSITY_RESULT[44];
+                C = INTENSITY_RESULT[36];
+                D = INTENSITY_RESULT[27];
+                E = INTENSITY_RESULT[35];
+            } else if (a == 37) {
+                A = INTENSITY_RESULT[38];
+                B = INTENSITY_RESULT[37];
+                C = INTENSITY_RESULT[37];
+                D = INTENSITY_RESULT[29];
+                E = INTENSITY_RESULT[37];
+            } else if (a == 38) {
+                A = INTENSITY_RESULT[39];
+                B = INTENSITY_RESULT[45];
+                C = INTENSITY_RESULT[38];
+                D = INTENSITY_RESULT[30];
+                E = INTENSITY_RESULT[37];
+            } else if (a == 39) {
+                A = INTENSITY_RESULT[40];
+                B = INTENSITY_RESULT[46];
+                C = INTENSITY_RESULT[39];
+                D = INTENSITY_RESULT[31];
+                E = INTENSITY_RESULT[38];
+            } else if (a == 40) {
+                A = INTENSITY_RESULT[41];
+                B = INTENSITY_RESULT[47];
+                C = INTENSITY_RESULT[40];
+                D = INTENSITY_RESULT[32];
+                E = INTENSITY_RESULT[39];
+            } else if (a == 41) {
+                A = INTENSITY_RESULT[42];
+                B = INTENSITY_RESULT[48];
+                C = INTENSITY_RESULT[41];
+                D = INTENSITY_RESULT[33];
+                E = INTENSITY_RESULT[40];
+            } else if (a == 42) {
+                A = INTENSITY_RESULT[43];
+                B = INTENSITY_RESULT[49];
+                C = INTENSITY_RESULT[42];
+                D = INTENSITY_RESULT[34];
+                E = INTENSITY_RESULT[41];
+            } else if (a == 43) {
+                A = INTENSITY_RESULT[44];
+                B = INTENSITY_RESULT[50];
+                C = INTENSITY_RESULT[43];
+                D = INTENSITY_RESULT[35];
+                E = INTENSITY_RESULT[42];
+            } else if (a == 44) {
+                A = INTENSITY_RESULT[10];
+                B = INTENSITY_RESULT[11];
+                C = INTENSITY_RESULT[44];
+                D = INTENSITY_RESULT[36];
+                E = INTENSITY_RESULT[43];
+            } else if (a == 45) {
+                A = INTENSITY_RESULT[46];
+                B = INTENSITY_RESULT[45];
+                C = INTENSITY_RESULT[45];
+                D = INTENSITY_RESULT[38];
+                E = INTENSITY_RESULT[45];
+            } else if (a == 46) {
+                A = INTENSITY_RESULT[47];
+                B = INTENSITY_RESULT[51];
+                C = INTENSITY_RESULT[46];
+                D = INTENSITY_RESULT[39];
+                E = INTENSITY_RESULT[45];
+            } else if (a == 47) {
+                A = INTENSITY_RESULT[48];
+                B = INTENSITY_RESULT[52];
+                C = INTENSITY_RESULT[47];
+                D = INTENSITY_RESULT[40];
+                E = INTENSITY_RESULT[46];
+            } else if (a == 48) {
+                A = INTENSITY_RESULT[49];
+                B = INTENSITY_RESULT[53];
+                C = INTENSITY_RESULT[48];
+                D = INTENSITY_RESULT[41];
+                E = INTENSITY_RESULT[47];
+            } else if (a == 49) {
+                A = INTENSITY_RESULT[50];
+                B = INTENSITY_RESULT[54];
+                C = INTENSITY_RESULT[49];
+                D = INTENSITY_RESULT[42];
+                E = INTENSITY_RESULT[48];
+            } else if (a == 50) {
+                A = INTENSITY_RESULT[50];
+                B = INTENSITY_RESULT[50];
+                C = INTENSITY_RESULT[50];
+                D = INTENSITY_RESULT[43];
+                E = INTENSITY_RESULT[49];
+            } else if (a == 51) {
+                A = INTENSITY_RESULT[52];
+                B = INTENSITY_RESULT[51];
+                C = INTENSITY_RESULT[51];
+                D = INTENSITY_RESULT[46];
+                E = INTENSITY_RESULT[51];
+            } else if (a == 52) {
+                A = INTENSITY_RESULT[53];
+                B = INTENSITY_RESULT[52];
+                C = INTENSITY_RESULT[52];
+                D = INTENSITY_RESULT[47];
+                E = INTENSITY_RESULT[51];
+            } else if (a == 53) {
+                A = INTENSITY_RESULT[54];
+                B = INTENSITY_RESULT[53];
+                C = INTENSITY_RESULT[53];
+                D = INTENSITY_RESULT[48];
+                E = INTENSITY_RESULT[52];
+            } else if (a == 54) {
+                A = INTENSITY_RESULT[54];
+                B = INTENSITY_RESULT[13];
+                C = INTENSITY_RESULT[54];
+                D = INTENSITY_RESULT[49];
+                E = INTENSITY_RESULT[53];
+            }
+        }
+    }
+    public void ABC_Small(int i) {
+
+        if (testEye.equals("Left")) {
+            if (i == 0) {
+                small_rec_vals[3] = (getAverageContrast(bottom_right[4], top_right[9], top_left[10]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[3], top_left[10], third_top_left[10]));
+                small_rec_vals[1] = (getAverageContrast(second_bottom_right[4], bottom_right[4], small_rec_vals[3]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[1], small_rec_vals[3], small_rec_vals[4]));
+            } else if (i == 1) {
+                small_rec_vals[3] = (getAverageContrast(bottom_right[10], top_right[17], top_left[18]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[3], top_left[18], third_top_left[18]));
+                small_rec_vals[1] = (getAverageContrast(second_bottom_right[10], bottom_right[10], small_rec_vals[3]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[1], small_rec_vals[3], small_rec_vals[4]));
+            } else if (i == 2) {
+                small_rec_vals[3] = (getAverageContrast(bottom_right[18], top_right[27], top_left[19]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[3], top_left[19], third_top_left[19]));
+                small_rec_vals[1] = (getAverageContrast(second_bottom_right[18], bottom_right[18], small_rec_vals[3]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[1], small_rec_vals[3], small_rec_vals[4]));
+            } else if (i == 3) {
+                small_rec_vals[1] = (getAverageContrast(bottom_left[28], bottom_right[36], top_right[44]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[1], third_bottom_left[28], bottom_left[28]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], second_top_right[44], top_right[44]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[1], small_rec_vals[2], small_rec_vals[3]));
+            } else if (i == 4) {
+                small_rec_vals[1] = (getAverageContrast(bottom_left[44], bottom_right[43], top_right[50]));
+                small_rec_vals[2] = (getAverageContrast(third_bottom_left[44], bottom_left[44], small_rec_vals[1]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], second_top_right[50], top_right[50]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[3], small_rec_vals[1], small_rec_vals[2]));
+            } else if (i == 5) {
+                small_rec_vals[1] = (getAverageContrast(bottom_left[50], bottom_right[49], top_right[50]));
+                small_rec_vals[2] = (getAverageContrast(third_bottom_left[50], bottom_left[50], small_rec_vals[1]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], second_top_right[54], top_right[54]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[3], small_rec_vals[1], small_rec_vals[2]));
+            } else if (i == 6) {
+                small_rec_vals[2] = (getAverageContrast(bottom_right[45], bottom_left[46], top_left[51]));
+                small_rec_vals[1] = (getAverageContrast(third_bottom_right[45], bottom_right[45], small_rec_vals[2]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], small_rec_vals[2], small_rec_vals[4]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[2], top_left[51], second_top_left[51]));
+
+            } else if (i == 7) {
+                small_rec_vals[2] = (getAverageContrast(bottom_right[37], bottom_left[38], top_left[45]));
+                small_rec_vals[1] = (getAverageContrast(third_bottom_right[37], bottom_right[37], small_rec_vals[2]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], small_rec_vals[2], small_rec_vals[4]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[2], top_left[45], second_top_left[45]));
+            } else if (i == 8) {
+                small_rec_vals[4] = (getAverageContrast(bottom_left[5], top_left[12], top_right[11]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[4], third_top_right[11], top_right[11]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[4], second_bottom_left[5], bottom_left[5]));
+                small_rec_vals[1] = (getAverageContrast(small_rec_vals[2], small_rec_vals[3], small_rec_vals[4]));
+
+            } else if (i == 9) {
+                small_rec_vals[4] = (getAverageContrast(bottom_left[1], top_left[6], top_right[5]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[4], third_top_right[5], top_right[5]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[4], second_bottom_left[1], bottom_left[1]));
+                small_rec_vals[1] = (getAverageContrast(small_rec_vals[2], small_rec_vals[3], small_rec_vals[4]));
+
+            }
+        } else if (testEye.equals("Right")) {
+            if (i == 0) {
+                small_rec_vals[3] = (getAverageContrast(bottom_right[4], top_right[9], top_left[10]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[3], top_left[10], third_top_left[10]));
+                small_rec_vals[1] = (getAverageContrast(second_bottom_right[4], bottom_right[4], small_rec_vals[3]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[1], small_rec_vals[3], small_rec_vals[4]));
+            } else if (i == 1) {
+                small_rec_vals[3] = (getAverageContrast(bottom_right[10], top_right[17], top_left[18]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[3], top_left[18], third_top_left[18]));
+                small_rec_vals[1] = (getAverageContrast(second_bottom_right[10], bottom_right[10], small_rec_vals[3]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[1], small_rec_vals[3], small_rec_vals[4]));
+            } else if (i == 6) {
+                small_rec_vals[2] = (getAverageContrast(bottom_right[28], bottom_left[29], top_left[37]));
+                small_rec_vals[1] = (getAverageContrast(third_bottom_right[28], bottom_right[28], small_rec_vals[2]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], small_rec_vals[2], small_rec_vals[4]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[2], top_left[37], second_top_left[37]));
+            } else if (i == 7) {
+                small_rec_vals[4] = (getAverageContrast(bottom_left[11], top_left[20], top_right[19]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[4], third_top_right[19], top_right[19]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[4], second_bottom_left[11], bottom_left[11]));
+                small_rec_vals[1] = (getAverageContrast(small_rec_vals[2], small_rec_vals[3], small_rec_vals[4]));
+
+            } else if (i == 2) {
+                small_rec_vals[1] = (getAverageContrast(bottom_left[44], bottom_right[43], top_right[50]));
+                small_rec_vals[2] = (getAverageContrast(third_bottom_left[44], bottom_left[44], small_rec_vals[1]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], second_top_right[50], top_right[50]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[3], small_rec_vals[1], small_rec_vals[2]));
+            } else if (i == 3) {
+                small_rec_vals[1] = (getAverageContrast(bottom_left[50], bottom_right[49], top_right[50]));
+                small_rec_vals[2] = (getAverageContrast(third_bottom_left[50], bottom_left[50], small_rec_vals[1]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], second_top_right[54], top_right[54]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[3], small_rec_vals[1], small_rec_vals[2]));
+            } else if (i == 4) {
+                small_rec_vals[2] = (getAverageContrast(bottom_right[45], bottom_left[46], top_left[51]));
+                small_rec_vals[1] = (getAverageContrast(third_bottom_right[45], bottom_right[45], small_rec_vals[2]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], small_rec_vals[2], small_rec_vals[4]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[2], top_left[51], second_top_left[51]));
+
+            } else if (i == 5) {
+                small_rec_vals[2] = (getAverageContrast(bottom_right[37], bottom_left[38], top_left[45]));
+                small_rec_vals[1] = (getAverageContrast(third_bottom_right[37], bottom_right[37], small_rec_vals[2]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[1], small_rec_vals[2], small_rec_vals[4]));
+                small_rec_vals[4] = (getAverageContrast(small_rec_vals[2], top_left[45], second_top_left[45]));
+            } else if (i == 8) {
+                small_rec_vals[4] = (getAverageContrast(bottom_left[5], top_left[12], top_right[11]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[4], third_top_right[11], top_right[11]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[4], second_bottom_left[5], bottom_left[5]));
+                small_rec_vals[1] = (getAverageContrast(small_rec_vals[2], small_rec_vals[3], small_rec_vals[4]));
+
+            } else if (i == 9) {
+                small_rec_vals[4] = (getAverageContrast(bottom_left[1], top_left[6], top_right[5]));
+                small_rec_vals[3] = (getAverageContrast(small_rec_vals[4], third_top_right[5], top_right[5]));
+                small_rec_vals[2] = (getAverageContrast(small_rec_vals[4], second_bottom_left[1], bottom_left[1]));
+                small_rec_vals[1] = (getAverageContrast(small_rec_vals[2], small_rec_vals[3], small_rec_vals[4]));
+            }
+        }
+    }
+
+    private void draw_dots_small_rectangle ( int x1, int y1, int num){
+        ABC_Small(num);
+        for (int i = 0; i < 22; i = i + 1) {
+            for (int j = 0; j < 22; j = j + 1) {
+                paint.setColor(TemporaryVariables.getColorCode((int)small_rec_vals[1]));
+                canvas.drawCircle(x1 + i, y1 + j, dot_width - 2, paint);
+            }
+
+            for (int j = 22; j < 44; j = j + 1) {
+                paint.setColor(TemporaryVariables.getColorCode((int)small_rec_vals[3]));
+                canvas.drawCircle(x1 + i, y1 + j, dot_width - 2, paint);
+            }
+        }
+        for (int i = 22; i < 44; i = i + 1) {
+            for (int j = 0; j < 22; j = j + 1) {
+                paint.setColor(TemporaryVariables.getColorCode((int)small_rec_vals[2]));
+                canvas.drawCircle(x1 + i, y1 + j, dot_width - 2, paint);
+            }
+            for (int j = 22; j < 44; j = j + 1) {
+                paint.setColor(TemporaryVariables.getColorCode((int)small_rec_vals[4]));
+                canvas.drawCircle(x1 + i, y1 + j, dot_width - 2, paint);
+            }
+        }
+    }
+
+    private void draw_dots_rectangle(int x, int y, int intensity, int point) {
+        int i = 0, coll;
+        double cval = 0;
+        Paint p = new Paint();
+        p.setStyle(Paint.Style.FILL_AND_STROKE);
+        p.setTextSize(18);
+        p.setColor(Color.WHITE);
+
+        for (i = 0; i < 22; i = i + 1) {
+            for (int j = 0; j < 22; j = j + 1) {
+                cval = (68 * C + 11 * D + 11 * E) / 90.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                top_left[point] = (int) cval;
+            }
+            for (int j = 22; j < 44; j = j + 1) {
+                cval = (22 * C + 7 * E + D) / 30.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                second_top_left[point] = (int) cval;
+            }
+            for (int j = 44; j < 66; j = j + 1) {
+                cval = (3 * C + 2 * E) / 5.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                middle_left[point] = (int) cval;
+            }
+            for (int j = 66; j < 88; j = j + 1) {
+                cval = (22 * C + 7 * E + B) / 30.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                second_bottom_left[point] = (int) cval;
+            }
+            for (int j = 88; j < 110; j = j + 1) {
+                cval = (68 * C + 11 * B + 11 * E) / 90.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                bottom_left[point] = (int) cval;
+            }
+
+        }
+
+        for (i = 22; i < 44; i = i + 1) {
+            for (int j = 0; j < 22; j = j + 1) {
+                cval = (22 * C + 7 * D + E) / 30.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                third_top_left[point] = (int) cval;
+            }
+            for (int j = 22; j < 44; j = j + 1) {
+                cval = (8 * C + E + D) / 10.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+
+            }
+
+            for (int j = 44; j < 66; j = j + 1) {
+                cval = (4 * C + E) / 5.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+            }
+
+            for (int j = 66; j < 88; j = j + 1) {
+                cval = (8 * C + E + B) / 10.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+            }
+
+            for (int j = 88; j < 110; j = j + 1) {
+                cval = (22 * C + 7 * B + E) / 30.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                third_bottom_left[point] = (int) cval;
+            }
+        }
+
+        for (i = 44; i < 66; i = i + 1) {
+            for (int j = 0; j < 22; j = j + 1) {
+                cval = (3 * C + 2 * D) / 5.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                middle_top[point] = (int) cval;
+            }
+            for (int j = 22; j < 44; j = j + 1) {
+                cval = (4 * C + D) / 5.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+            }
+            for (int j = 44; j < 66; j = j + 1) {
+                cval = C * 1.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+
+                if (cval>=21)
+                    p.setColor(Color.BLACK);
+            }
+            canvas.drawText(Integer.toString(intensity), x + 35, y + 55, p);
+
+            for (int j = 66; j < 88; j = j + 1) {
+                cval = (4 * C + B) / 5.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+            }
+            for (int j = 88; j < 110; j = j + 1) {
+                cval = (3 * C + 2 * B) / 5.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                middle_bottom[point]= (int) cval;
+            }
+        }
+
+
+        for (i = 66; i < 88; i = i + 1) {
+            for (int j = 0; j < 22; j = j + 1) {
+                cval = (22 * C + 7 * D + A) / 30.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                third_top_right[point]= (int) cval;
+            }
+            for (int j = 22; j < 44; j = j + 1) {
+                cval = (8 * C + A + D) / 10.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+            }
+            for (int j = 44; j < 66; j = j + 1) {
+                cval = (A + 4 * C) / 5.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+            }
+            for (int j = 66; j < 88; j = j + 1) {
+                cval = (8 * C + A + B) / 10.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+            }
+            for (int j = 88; j < 110; j = j + 1) {
+                cval = (22 * C + 7 * B + A) / 30.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                third_bottom_right[point]= (int) cval;
+            }
+        }
+
+
+        for (i = 88; i < 110; i = i + 1) {
+            int j = 0;
+            for (j = 0; j < 22; j = j + 1) {
+                cval = (68 * C + 11 * A + 11 * D) / 90.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                top_right[point] = (int) cval;
+            }
+            for (j = 22; j < 44; j = j + 1) {
+                cval = (22 * C + 7 * A + D) / 30.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                second_top_right[point]= (int) cval;
+            }
+            for (j = 44; j < 66; j = j + 1) {
+                cval = (2 * A + 3 * C) / 5.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                middle_right[point]= (int) cval;
+            }
+            for (j = 66; j < 88; j = j + 1) {
+                cval = (22 * C + 7 * A + B) / 30.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                second_bottom_right[point]= (int) cval;
+            }
+            for (j = 88; j < 110; j = j + 1) {
+                cval = (68 * C + 11 * A + 11 * B) / 90.0;
+                coll = TemporaryVariables.getColorCode(Math.round(cval));
+                paint.setColor(coll);
+                canvas.drawCircle(x + i, y + j, dot_width - 2, paint);
+                bottom_right[point]= (int) cval;
+            }
+        }
+
+    }
+    public  void drawtotalDeviationPattern() {
+
+        Paint stdpaint = new Paint();
+        stdpaint.setColor(Color.BLACK);
+        stdpaint.setStyle(Paint.Style.FILL);
+        stdpaint.setTextSize(45);
+        stdpaint.setTypeface(Typeface.defaultFromStyle(Typeface.NORMAL));
+        stdpaint.setStrokeWidth(5);
+
+        totalDeviationBmp1 = Bitmap.createBitmap(1200,1200, Bitmap.Config.ARGB_8888);
+        totalDeviationBmp2 = Bitmap.createBitmap(1200,1200, Bitmap.Config.ARGB_8888);
+        Canvas stdcanvas=new Canvas(totalDeviationBmp1);
+        Canvas stdcanvas2=new Canvas(totalDeviationBmp2);
+
+        int newwidth = 4;
+        float newleft = 600 - newwidth / 2;
+        float newtop = 0;
+        float newright = newleft + newwidth;
+        float newbottom = 1200;
+
+        stdcanvas.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+        stdcanvas2.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+
+        newleft = 0;
+        newtop = 600 - newwidth / 2;
+        newright = 1200;
+        newbottom =newtop + newwidth;
+
+        stdcanvas.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+        stdcanvas2.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+
+        // NORMATIVE DATA
+
+
+        _24_2_NormativeData data = new _24_2_NormativeData();
+        NORMAL_INTENSITY = data.getNormativeData(Integer.parseInt(age), testEye);
+
+        for(int i=1;i<55;i++) {
+            TOTAL_DEVIATION[i] = INTENSITY_RESULT[i] - NORMAL_INTENSITY[i];
+
+            if (testEye.equals("Left")) {
+                if (i == 21 || i == 30)
+                    continue;
+            } else {
+                if (i == 26 || i == 35)
+                    continue;
+            }
+            int x = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[0] + 600 - 34;
+            int y = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[1] + 600;
+            paint.setTextSize(45);
+            paint.setColor(Color.BLACK);
+            if (TOTAL_DEVIATION[i] >= 0) {
+                stdcanvas.drawText("  " + String.valueOf(TOTAL_DEVIATION[i]), x, y, paint);
+            } else
+                stdcanvas.drawText(String.valueOf(TOTAL_DEVIATION[i]), x, y, paint);
+
+
+            x = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[0] + 600;
+            y = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[1] + 600;
+
+
+            //FIRST CIRCLE
+
+            if (i == 23 || i == 24 || i == 32 || i == 33) {
+
+                if (TOTAL_DEVIATION[i] >= -3) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -4) {
+                    draw_1_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -5) {
+                    draw_2_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -6) {
+                    draw_5_perc(stdcanvas2, x, y, stdpaint);
+                } else {
+                    draw_0_5_perc(stdcanvas2, x, y, stdpaint);
+                }
+            }
+
+            // Second Circle
+
+            else if (i == 13 || i == 14 || i == 15 || i == 16 || i == 22 || i == 25 || i == 31 || i == 34 || i == 39 || i == 40 || i == 41 || i == 42) {
+
+                if (TOTAL_DEVIATION[i] >= -4) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -5) {
+                    draw_1_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -6) {
+                    draw_2_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -7) {
+                    draw_5_perc(stdcanvas2, x, y, stdpaint);
+                } else {
+                    draw_0_5_perc(stdcanvas2, x, y, stdpaint);
+                }
+            }
+
+            // Third Circle
+
+            else if (i == 5 || i == 6 || i == 7 || i == 8 || i == 9 || i == 10 || i == 12 || i == 17 || i == 21 || i == 26 || i == 30 || i == 35 || i == 38 || i == 43 || i == 45 || i == 46 || i == 47 || i == 48 || i == 49 || i == 50) {
+
+                if (TOTAL_DEVIATION[i] >= -4) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -5) {
+                    draw_1_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -6) {
+                    draw_2_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -7) {
+                    draw_5_perc(stdcanvas2, x, y, stdpaint);
+                } else {
+                    draw_0_5_perc(stdcanvas2, x, y, stdpaint);
+                }
+
+            }
+
+            //Fourth Circle
+
+            else if (i == 1 || i == 2 || i == 3 || i == 4 || i == 11 || i == 18 || i == 20 || i == 27 || i == 29 || i == 36 || i == 37 || i == 44 || i == 51 || i == 52 || i == 53 || i == 54) {
+
+                if (TOTAL_DEVIATION[i] >= -5) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -6) {
+                    draw_1_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -7) {
+                    draw_2_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -8) {
+                    draw_5_perc(stdcanvas2, x, y, stdpaint);
+                } else {
+                    draw_0_5_perc(stdcanvas2, x, y, stdpaint);
+                }
+            }
+
+            //FIFTH
+            else {
+
+                if (TOTAL_DEVIATION[i] >= -5) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -6) {
+                    draw_1_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -7) {
+                    draw_2_perc(stdcanvas2, x, y, stdpaint);
+                } else if (TOTAL_DEVIATION[i] == -8) {
+                    draw_5_perc(stdcanvas2, x, y, stdpaint);
+                } else {
+                    draw_0_5_perc(stdcanvas2, x, y, stdpaint);
+                }
+            }
+        }
+        String totaldeviationString = Arrays.toString(TOTAL_DEVIATION);
+
+        for(int i=1;i<55;i++){
+            int md=0;
+            if (testEye.equals("Left")) {
+                if (i != 21 && i != 30)
+                    md = md + TOTAL_DEVIATION[i];
+            } else {
+                if (i != 26 && i != 35)
+                    md = md + TOTAL_DEVIATION[i];
+            }
+        }
+    }
+    public  void drawPatternDeviationPattern() {
+
+        Paint stdpaint = new Paint();
+        stdpaint.setColor(Color.BLACK);
+        stdpaint.setStyle(Paint.Style.FILL);
+        stdpaint.setTextSize(45);
+        stdpaint.setTypeface(Typeface.defaultFromStyle(Typeface.NORMAL));
+        stdpaint.setStrokeWidth(5);
+
+        patternDeviationBmp1 = Bitmap.createBitmap(1200,1200, Bitmap.Config.ARGB_8888);
+        patternDeviationBmp2 = Bitmap.createBitmap(1200,1200, Bitmap.Config.ARGB_8888);
+        Canvas stdcanvas=new Canvas(patternDeviationBmp1);
+        Canvas stdcanvas2=new Canvas(patternDeviationBmp2);
+
+        int newwidth = 4;
+        float newleft = 600 - newwidth / 2;
+        float newtop = 0;
+        float newright = newleft + newwidth;
+        float newbottom = 1200;
+
+        stdcanvas.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+        stdcanvas2.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+        newleft = 0;
+        newtop = 600 - newwidth / 2;
+        newright = 1200;
+        newbottom =newtop + newwidth;
+        stdcanvas.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+        stdcanvas2.drawRect(newleft, newtop, newright, newbottom, stdpaint);
+
+        for (int i=1;i<=54;i++){
+            if (testEye.equals("Left")){
+                if(i!=21 && i!=30)
+                    SORTED_ARRAY[i]=TOTAL_DEVIATION[i];             //NORMAL ARRAY
+            }
+            else{
+                if (i!=26 && i!=35)
+                    SORTED_ARRAY[i]=TOTAL_DEVIATION[i];             //NORMAL ARRAY
+            }
+        }
+
+        for(int i=1; i<=54; i++)                                     //SORTED ARRAY
+        {
+            for(int j=i + 1; j<=54; j++)
+            {
+                if(SORTED_ARRAY[i] < SORTED_ARRAY[j])
+                {
+                    int temp = SORTED_ARRAY[i];
+                    SORTED_ARRAY[i] = SORTED_ARRAY[j];
+                    SORTED_ARRAY[j] = temp;
+                }
+            }
+        }
+
+
+        for (int i = 1; i <= 54; i++) {
+            if (testEye.equals("Left")) {
+                if (i != 21 && i != 30)
+                    PATTERN_DEVIATION[i] = TOTAL_DEVIATION[i] + Math.abs(SORTED_ARRAY[7]);             //NORMAL ARRAY
+                else
+                    PATTERN_DEVIATION[i] = 0;
+            } else {
+                if (i != 26 && i != 35)
+                    PATTERN_DEVIATION[i] = TOTAL_DEVIATION[i] + Math.abs(SORTED_ARRAY[7]);             //NORMAL ARRAY
+                else
+                    PATTERN_DEVIATION[i] = 0;
+            }
+        }
+        psd = TemporaryVariables.calculatePSD(PATTERN_DEVIATION, 52);
+
+        for(int i=1;i<55;i++) {
+            if (testEye.equals("Left")) {
+                if (i == 21 || i == 30)
+                    continue;
+            } else {
+                if (i == 26 || i == 35)
+                    continue;
+            }
+            int x = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[0] + 600-34;
+            int y = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[1] + 600;
+
+            paint.setColor(Color.BLACK);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setTextSize(45);
+            stdpaint.setStrokeWidth(5);
+
+            if ( PATTERN_DEVIATION[i]>=0) {
+                stdcanvas.drawText("  "+ PATTERN_DEVIATION[i], x, y, paint);
+            }
+            else
+                stdcanvas.drawText(String.valueOf(PATTERN_DEVIATION[i]), x, y, paint);
+
+
+            x = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[0] + 600;
+            y = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[1] + 600;
+
+            //FIRST CIRCLE
+
+            if (i==23 || i==24 || i==32 || i==33){
+
+                if (PATTERN_DEVIATION[i]>=-3) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                }
+
+                else if (PATTERN_DEVIATION[i]==-4) {
+                    draw_1_perc(stdcanvas2, x,y,stdpaint);
+                }
+
+                else if (PATTERN_DEVIATION[i]==-5){
+                    draw_2_perc(stdcanvas2, x,y,stdpaint);
+                }
+
+                else if (PATTERN_DEVIATION[i]==-6) {
+                    draw_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+
+                else {
+                    draw_0_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+            }
+
+            // Second Circle
+
+            else if (i==13 || i==14 || i==15 || i==16 || i==22 || i==25 || i==31 || i==34 || i==39 || i==40 || i==41 || i==42){
+
+                if (PATTERN_DEVIATION[i]>=-4) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-5) {
+                    draw_1_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-6){
+                    draw_2_perc(stdcanvas2, x,y,stdpaint);
+                }
+
+                else if (PATTERN_DEVIATION[i]==-7) {
+                    draw_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+
+
+                else {
+                    draw_0_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+            }
+
+            // Third Circle
+
+            else if (i==5 || i==6 || i==7 || i==8 || i==9 || i==10 || i==12 || i==17 || i==21 || i==26 || i==30 || i==35 || i==38 || i==43 || i==45 || i==46 || i==47 || i==48 || i==49 || i==50 ){
+
+                if (PATTERN_DEVIATION[i]>=-4) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-5) {
+                    draw_1_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-6){
+                    draw_2_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-7) {
+                    draw_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else {
+                    draw_0_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+
+            }
+
+            //Fourth Circle
+
+            else if (i==1 || i==2 || i==3 || i==4 || i==11 || i==18 || i==20 || i==27 || i==29 || i==36 || i==37 || i==44 || i==51 || i==52 || i==53 || i==54){
+
+                if (PATTERN_DEVIATION[i]>=-5) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-6) {
+                    draw_1_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-7){
+                    draw_2_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-8) {
+                    draw_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else {
+                    draw_0_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+            }
+
+            //FIFTH
+            else {
+
+                if (PATTERN_DEVIATION[i]>=-5) {
+                    stdcanvas2.drawCircle(x, y, 2, stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-6) {
+                    draw_1_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-7){
+                    draw_2_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else if (PATTERN_DEVIATION[i]==-8) {
+                    draw_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+                else {
+                    draw_0_5_perc(stdcanvas2, x,y,stdpaint);
+                }
+            }
+        }
+        StringBuilder builder2 = new StringBuilder();
+        for (int i = 0; i < PATTERN_DEVIATION.length; i++) {
+            builder2.append(PATTERN_DEVIATION[i]);
+            if (i < PATTERN_DEVIATION.length - 1) {
+                builder2.append(",");
+            }
+        }
+        patternDeviation = builder2.toString();
+        String patterndeviationString = Arrays.toString(PATTERN_DEVIATION);
+
+    }
+
+
+    public void draw_0_5_perc(Canvas stdcanvas2, int x, int y, Paint stdpaint){
+        stdcanvas2.drawRect(x - 20, y - 20, x + 20, y + 20, stdpaint);
+    }
+    public void draw_5_perc(Canvas stdcanvas2, int x, int y, Paint stdpaint){
+
+        stdcanvas2.drawCircle(x - 20, y - 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x + 20, y - 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x - 20, y + 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x + 20, y + 20, 4, stdpaint);
+    }
+    public void draw_2_perc(Canvas stdcanvas2, int x, int y, Paint stdpaint){
+
+        stdcanvas2.drawCircle(x - 20, y - 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x + 20, y - 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x, y - 20, 4, stdpaint);
+
+        stdcanvas2.drawCircle(x - 20, y, 4, stdpaint);
+        stdcanvas2.drawCircle(x + 20, y, 4, stdpaint);
+
+        stdcanvas2.drawCircle(x - 20, y + 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x + 20, y + 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x, y + 20, 4, stdpaint);
+
+        stdcanvas2.drawLine(x, y - 20, x - 20, y, stdpaint);
+        stdcanvas2.drawLine(x - 20, y, x, y + 20, stdpaint);
+        stdcanvas2.drawLine(x, y + 20, x + 20, y, stdpaint);
+        stdcanvas2.drawLine(x + 20, y, x, y - 20, stdpaint);
+    }
+    public void draw_1_perc(Canvas stdcanvas2, int x, int y, Paint stdpaint){
+
+        stdcanvas2.drawCircle(x - 20, y - 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x + 20, y - 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x, y - 20, 4, stdpaint);
+
+        stdcanvas2.drawCircle(x - 20, y, 4, stdpaint);
+        stdcanvas2.drawCircle(x + 20, y, 4, stdpaint);
+        stdcanvas2.drawCircle(x, y, 4, stdpaint);
+
+        stdcanvas2.drawCircle(x - 20, y + 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x + 20, y + 20, 4, stdpaint);
+        stdcanvas2.drawCircle(x, y + 20, 4, stdpaint);
+    }
+    private double getAverageContrast(double c1, double c2, double c3){
+        double avg;
+        avg =  (c1+c2+c3)/3.0;
+        return avg;
+    }
+
 
     private void parseAndAssignIntensity(String intensity) {
         // Remove the square brackets from the string
@@ -642,10 +2245,10 @@ public class ScanQRCodeActivity extends AppCompatActivity {
 
         public Void doInBackground(Void... unused) {
 
-            //getMappedBitmap();                  // Colored mapping bitmap
+            getMappedBitmap();                  // Colored mapping bitmap
             setIntensityPattern();              // Raw data Numbered bitmap
-            //drawtotalDeviationPattern();        // Total deviation calculation and bitmap
-            //drawPatternDeviationPattern();      // Pattern deviation calculation and bitmap
+            drawtotalDeviationPattern();        // Total deviation calculation and bitmap
+            drawPatternDeviationPattern();      // Pattern deviation calculation and bitmap
 
 
             Log.d("FAST", "REPORT2");
@@ -654,12 +2257,12 @@ public class ScanQRCodeActivity extends AppCompatActivity {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    //final_report.setImageBitmap(bitmap_mapped);
-                }
-            });
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    final_report.setImageBitmap(bitmap_mapped);
+//                }
+//            });
 
             // Creating the PDF File
             try {
@@ -845,7 +2448,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         createHeadings(cb, 490, 654, gender, 9, "normal");
 
         createImages(document, stdBmp, 30, 420, 200, 210);
-        //createImages(document, bitmap_mapped, 270, 420, 200, 210);
+        createImages(document, bitmap_mapped, 270, 420, 200, 210);
 
         createHeadings(cb, 490, 610, "Sensitivity", 9, "normal");
         createHeadings(cb, 490, 600, "threshold [dB]", 9, "normal");
@@ -1050,7 +2653,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private void footer(Document document, PdfContentByte cb) {
 
         createHeadings(cb, 50, 45, "Disclaimer: This report is only indicative and not conclusive, please refer to an expert before further action/ medication.", 9, "normal");
-        //createHeadings(cb, 30,  30, "iVA -Intelligent Vision Analyzer " + " | Software: " +software_version +" | Hardware: "+hardware_version, 9, "normal");
+        createHeadings(cb, 30,  30, "iVA -Intelligent Vision Analyzer " + " | Software: " +software_version +" | Hardware: "+hardware_version, 9, "normal");
         createHeadings(cb, 390, 30, "Developed by Alfaleus", 9, "normal");
 
         Rectangle rectangle4 = new Rectangle(0, 0, 800, 20);
@@ -1124,12 +2727,12 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         pdf_details_col_4(document, cb);
         // Uncomment and adjust as needed
          threshold_range_plot(document, cb);
-        // createImages(document, totalDeviationBmp1, 30, 250, 150, 155);
-        // createHeadings(cb, 75, 235, "Total Deviation", 9, "normal");
-        // createImages(document, totalDeviationBmp2, 30, 80, 150, 155);
-        // createImages(document, patternDeviationBmp1, 210, 250, 150, 155);
-        // createHeadings(cb, 260, 235, "Pattern Deviation", 9, "normal");
-        // createImages(document, patternDeviationBmp2, 210, 80, 150, 155);
+         createImages(document, totalDeviationBmp1, 30, 250, 150, 155);
+         createHeadings(cb, 75, 235, "Total Deviation", 9, "normal");
+         createImages(document, totalDeviationBmp2, 30, 80, 150, 155);
+         createImages(document, patternDeviationBmp1, 210, 250, 150, 155);
+         createHeadings(cb, 260, 235, "Pattern Deviation", 9, "normal");
+         createImages(document, patternDeviationBmp2, 210, 80, 150, 155);
          p_value_range_plotting(document, cb);
         VFI_MD_PSD_GHT_Box(document, cb);
         eye_tracking_box(document, cb);
