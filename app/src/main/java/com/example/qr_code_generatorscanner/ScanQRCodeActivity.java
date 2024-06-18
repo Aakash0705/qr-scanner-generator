@@ -4,11 +4,13 @@ import static android.Manifest.permission.CAMERA;
 import static android.Manifest.permission.VIBRATE;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -18,6 +20,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -62,8 +66,8 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String scannedData;
     private String intensity;
     private Button selectFromGalleryBtn;
-    
-    Bitmap stdBmp;
+    private Bitmap bitmap_mapped;
+    Bitmap stdBmp, totalDeviationBmp1, totalDeviationBmp2, patternDeviationBmp1, patternDeviationBmp2;
 
     private String doctorName;
     private String hospital;
@@ -126,6 +130,36 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     };
 
     int dot_width = 4;
+    int[] top_right = new int[64];
+    int[] second_top_right = new int[64];
+    int[] middle_right = new int[64];
+    int[] second_bottom_right = new int[64];
+    int[] bottom_right = new int[64];
+
+    int[] third_bottom_right = new int[64];
+    int[] middle_bottom = new int[64];
+    int[] third_bottom_left = new int[64];
+    int[] bottom_left = new int[64];
+
+    int[] second_bottom_left = new int[64];
+    int[] middle_left = new int[64];
+    int[] second_top_left = new int[64];
+    int[] top_left = new int[64];
+
+    int[] third_top_left = new int[64];
+    int[] middle_top = new int[64];
+    int[] third_top_right = new int[64];
+
+    public int A,B,C,D,E;
+    public double[] small_rec_vals ={0,31,27,25,22};
+
+    int u_zone_1, u_zone_2,u_zone_3,u_zone_4,u_zone_5;
+    int l_zone_1, l_zone_2,l_zone_3,l_zone_4,l_zone_5;
+    int[] NORMAL_INTENSITY = new int[55];
+    int[] SORTED_ARRAY = new int[55];
+    int[] PATTERN_DEVIATION = new int[55];
+    int[] TOTAL_DEVIATION = new int[55];
+
 
 
     @Override
@@ -203,33 +237,9 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 ght = parsedData.get("GHT");
                 eyeTracking = parsedData.get("Eye Tracking");
                 lookedAway = parsedData.get("Looked Away");
-//                String[] intensityParts = new String[65]; // Initialize intensityParts array
-//
-//                if (intensity != null) {
-//                    intensityParts = intensity.split(",");
-//
-//                    // Now you can proceed with further processing using intensityParts array
-//                    // For example, iterate over intensityParts or perform operations based on its content
-//                    // Example:
-//                    for (String part : intensityParts) {
-//                        // Process each part as needed
-//                    }
-//                } else {
-//                    // Handle the case where intensity is null
-//                    Log.e("ScanQRCodeActivity", "Intensity is null");
-//
-//                }
-//                INTENSITY_RESULT = new int[65];
-//                for (int i = 0; i < intensityParts.length; i++) {
-//                    try {
-//                        INTENSITY_RESULT[i] = Integer.parseInt(intensityParts[i].trim());
-//                    } catch (NumberFormatException e) {
-//                        // Handle if the string part cannot be parsed as an integer
-//                        e.printStackTrace();
-//                        // You might want to handle this case based on your application's logic
-//                    }
-//                }
 
+               //
+                calculate();
                 try {
 
                     createPdfWrapper();
@@ -295,7 +305,33 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         }
     }
 
-//
+     private void calculate(){
+         String[] intensityParts = new String[65]; // Initialize intensityParts array
+
+         if (intensity != null) {
+             intensityParts = intensity.split(",");
+
+             // Now you can proceed with further processing using intensityParts array
+             // For example, iterate over intensityParts or perform operations based on its content
+             // Example:
+             for (String part : intensityParts) {
+                 // Process each part as needed
+             }
+         } else {
+             // Handle the case where intensity is null
+             Log.e("ScanQRCodeActivity", "Intensity is null");
+
+         }
+         for (int i = 0; i < intensityParts.length; i++) {
+             try {
+                 INTENSITY_RESULT[i] = Integer.parseInt(intensityParts[i].trim());
+             } catch (NumberFormatException e) {
+                 // Handle if the string part cannot be parsed as an integer
+                 e.printStackTrace();
+                 // You might want to handle this case based on your application's logic
+             }
+         }
+     }
 
     private void selectImageFromGallery() {
         Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
@@ -533,7 +569,45 @@ public class ScanQRCodeActivity extends AppCompatActivity {
             }
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
+    @SuppressLint("StaticFieldLeak")
+    public class MyTask extends AsyncTask<Void, Void, Void> {
+        public void onPreExecute() {
 
+        }
+
+        public Void doInBackground(Void... unused) {
+
+            //getMappedBitmap();                  // Colored mapping bitmap
+            setIntensityPattern();              // Raw data Numbered bitmap
+            //drawtotalDeviationPattern();        // Total deviation calculation and bitmap
+            //drawPatternDeviationPattern();      // Pattern deviation calculation and bitmap
+
+
+            Log.d("FAST", "REPORT2");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //final_report.setImageBitmap(bitmap_mapped);
+                }
+            });
+
+            // Creating the PDF File
+            try {
+                createPdfWrapper();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (DocumentException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
     private void createPdfWrapper() throws FileNotFoundException, DocumentException {
 
         String pdffilepath=savePdf();
