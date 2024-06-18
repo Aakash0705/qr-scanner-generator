@@ -19,6 +19,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -66,6 +68,8 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private TextView scannedTextView;
     private String scannedData;
     private String intensity;
+    private static Paint paint;
+
     private Button selectFromGalleryBtn;
     private Bitmap bitmap_mapped;
     Bitmap stdBmp, totalDeviationBmp1, totalDeviationBmp2, patternDeviationBmp1, patternDeviationBmp2;
@@ -76,7 +80,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String doctorPhone;
     private String patientName;
     private String mrn;
-    private String testEye;
+    private String testEye="R";
     private String phoneNo;
     private String threshold;
     private String fixationLoss;
@@ -103,9 +107,11 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String lookedAway;
     //int[] INTENSITY_RESULT;
     public static int[] INTENSITY_RESULT = new int[65];
+    public static String[] intensityParts = new String[65];
 
 
-    _24_2_Coordinates coordinate24_2;    // Coordinates class
+    _24_2_Coordinates coordinate24_2;
+    // Coordinates class
     double[][] small_rect_r = {           //Corner rectangles : right eye
             {823, 225, 4}, // 0
             {933, 335, 4}, // 1
@@ -173,6 +179,9 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         scannerLiveView = findViewById(R.id.camView);
         scannedTextView = findViewById(R.id.scannedData);
         selectFromGalleryBtn = findViewById(R.id.selectFromGalleryBtn);
+        paint = new Paint();
+        coordinate24_2 = new _24_2_Coordinates(this);
+
 
 
 
@@ -215,6 +224,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 patientName = parsedData.get("Patient Name");
                 mrn = parsedData.get("MRN");
                 testEye = parsedData.get("Eye");
+                Log.d("hello5","eye"+ testEye);
                 phoneNo = parsedData.get("Phone no");
                 threshold = parsedData.get("threshold");
                 fixationLoss = parsedData.get("Fixation Loss");
@@ -245,14 +255,17 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 eyeTracking = parsedData.get("Eye Tracking");
                 lookedAway = parsedData.get("Looked Away");
 
-                calculate();
-                try {
-                    createPdfWrapper();
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException(e);
-                } catch (DocumentException e) {
-                    throw new RuntimeException(e);
-                }
+               // calculate();
+                parseAndAssignIntensity(intensity);
+                // Background Task to create the report
+                new MyTask().execute();
+//                try {
+//                    createPdfWrapper();
+//                } catch (FileNotFoundException e) {
+//                    throw new RuntimeException(e);
+//                } catch (DocumentException e) {
+//                    throw new RuntimeException(e);
+//                }
             }
 
 
@@ -301,45 +314,88 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         newbottom = newtop + newwidth;
         stdCanvas.drawRect(newleft, newtop, newright, newbottom, stdpaint);
 
-        for (int i = 1; i < 55; i++) {
-            int x = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[0] + 600 - 27;
-            int y = coordinate24_2.getCoordinates(i, String.valueOf(testEye))[1] + 600;
-            stdpaint.setTextSize(30);
-            stdpaint.setStyle(Paint.Style.FILL);
-            stdCanvas.drawText(String.valueOf(INTENSITY_RESULT[i]), x, y, stdpaint);
+//        for (int i = 1; i < 55; i++) {
+//            int x = coordinate24_2.getCoordinates(i, (testEye))[0] + 600 - 27;
+//            int y = coordinate24_2.getCoordinates(i, (testEye))[1] + 600;
+//            stdpaint.setTextSize(30);
+//            stdpaint.setStyle(Paint.Style.FILL);
+//            stdCanvas.drawText(String.valueOf(INTENSITY_RESULT[i]), x, y, stdpaint);
+//        }
+        if (coordinate24_2 != null) {
+            for (int i = 1; i < 55; i++) {
+                int[] coordinates = coordinate24_2.getCoordinates(i, testEye);
+                int x = coordinates[0] + 600 - 27;
+                int y = coordinates[1] + 600;
+                stdpaint.setColor(Color.BLACK);
+                stdpaint.setTextSize(30);
+                stdpaint.setStyle(Paint.Style.FILL);
+                stdCanvas.drawText(String.valueOf(INTENSITY_RESULT[i]), x, y, stdpaint);
+            }
+        } else {
+            // Handle the case where coordinate24_2 is null
+            Log.e("ScanQRCodeActivity", "coordinate24_2 is null");
         }
     }
 
-     private void calculate(){
-         String[] intensityParts = new String[65]; // Initialize intensityParts array
+    private void parseAndAssignIntensity(String intensity) {
+        // Remove the square brackets from the string
+        String intensityValues = intensity.replace("[", "").replace("]", "");
 
-         if (intensity != null) {
-             intensityParts = intensity.split(",");
-             Log.d("hello2","intensity"+ Arrays.toString(intensityParts));
-             Log.d("mello2", "Number of items inside intensityParts: " + intensityParts.length);
+        // Split the string by commas
+        String[] intensityParts = intensityValues.split(",\\s*");
 
-             for (String part : intensityParts) {
-                 // Process each part as needed
-             }
-         } else {
-             // Handle the case where intensity is null
-             Log.e("ScanQRCodeActivity", "Intensity is null");
+        // Log the split values
+        Log.d("hello2", "intensityParts: " + Arrays.toString(intensityParts));
+        Log.d("mello2", "Number of items inside intensityParts: " + intensityParts.length);
 
-         }
-         int limit = Math.min(intensityParts.length, INTENSITY_RESULT.length);
+        // Ensure the length does not exceed the INTENSITY_RESULT array length
+        int limit = Math.min(intensityParts.length, INTENSITY_RESULT.length);
 
-         for (int i = 0; i < limit; i++) {
-             try {
-                 INTENSITY_RESULT[i] = Integer.parseInt(intensityParts[i].trim());
-                 Log.d("hello3", "intensity: " + Arrays.toString(INTENSITY_RESULT));
-                 Log.d("mello3", "Number of intensityResult: " + INTENSITY_RESULT.length);
-             } catch (NumberFormatException e) {
-                 // Handle if the string part cannot be parsed as an integer
-                 e.printStackTrace();
-                 // You might want to handle this case based on your application's logic
-             }
-         }
-     }
+        // Parse and assign the values to the INTENSITY_RESULT array
+        for (int i = 0; i < limit; i++) {
+            try {
+                INTENSITY_RESULT[i] = Integer.parseInt(intensityParts[i].trim());
+                Log.d("hello3", "intensity: " + Arrays.toString(INTENSITY_RESULT));
+            } catch (NumberFormatException e) {
+                // Handle if the string part cannot be parsed as an integer
+                Log.e("ScanQRCodeActivity", "Error parsing intensityParts[" + i + "]: " + intensityParts[i], e);
+            }
+        }
+
+        // Log the final number of items in INTENSITY_RESULT
+        Log.d("mello3", "Number of intensityResult items: " + INTENSITY_RESULT.length);
+    }
+
+//    private void calculate(){
+//         //intensityParts = new String[65]; // Initialize intensityParts array
+//
+//        if (intensity != null) {
+//            intensityParts = intensity.split(",");
+//            Log.d("hello2","intensity"+ Arrays.toString(intensityParts));
+//            Log.d("mello2", "Number of items inside intensityParts: " + intensityParts.length);
+//
+//            for (String part : intensityParts) {
+//                // Process each part as needed
+//            }
+//        } else {
+//            // Handle the case where intensity is null
+//            Log.e("ScanQRCodeActivity", "Intensity is null");
+//
+//        }
+//        int limit = Math.min(intensityParts.length, INTENSITY_RESULT.length);
+//
+//        for (int i = 0; i < 55; i++) {
+//            try {
+//                INTENSITY_RESULT[i] = Integer.parseInt(intensityParts[i].trim());
+//                Log.d("hello3", "intensity: " + Arrays.toString(INTENSITY_RESULT));
+//                Log.d("mello3", "Number of intensityResult: " + INTENSITY_RESULT.length);
+//            } catch (NumberFormatException e) {
+//                // Handle if the string part cannot be parsed as an integer
+//                e.printStackTrace();
+//                // You might want to handle this case based on your application's logic
+//            }
+//        }
+//    }
 
     private void selectImageFromGallery() {
         Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
@@ -702,10 +758,10 @@ public class ScanQRCodeActivity extends AppCompatActivity {
 //            createImages(document, icon,25,770,50,50);
 //        }
 //
-//        Drawable d3 = getResources().getDrawable(R.drawable.ivalogo);
-//        BitmapDrawable bitDw3 = ((BitmapDrawable) d3);
-//        Bitmap bmp_logo3 = bitDw3.getBitmap();
-//        createImages(document,bmp_logo3,460,770,100,100);
+        Drawable d3 = getResources().getDrawable(R.drawable.ivalogo);
+        BitmapDrawable bitDw3 = ((BitmapDrawable) d3);
+        Bitmap bmp_logo3 = bitDw3.getBitmap();
+        createImages(document,bmp_logo3,460,770,100,100);
 
     }
 
@@ -725,13 +781,9 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         createHeadings(cb, 490, 730, phoneNo, 10, "normal");
 
         createHeadings(cb, 420, 745, "Eye", 10, "bold");
-        //if (testEye.equals("Left LOS")) {
-        createHeadings(cb, 490, 745, "Left (OS)", 10, "normal");
-//
-//        } else {
-//            createHeadings(cb, 490, 745, "Right (OD)", 10, "normal");
-//
-//        }
+
+        createHeadings(cb, 490, 745,testEye, 10, "normal");
+
     }
 
     private void pdf_details_col_1(Document document, PdfContentByte cb) {
@@ -751,7 +803,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
 
 
         createHeadings(cb, 30, 654, "Test Duration", 9, "bold");
-        createHeadings(cb, 100, 654, testDuration, 9, "normal");
+        createHeadings(cb, 100, 654, testDuration+"min", 9, "normal");
 
 
         createHeadings(cb, 30, 642, "Fovea", 9, "bold");
@@ -768,19 +820,9 @@ public class ScanQRCodeActivity extends AppCompatActivity {
 
         createHeadings(cb, 140, 666, "Stimulus Size", 9, "bold");
         createHeadings(cb, 220, 666, stimulusSize, 9, "normal");
-//        if (stimulusSize.equals("Goldmann III")) {
-//        createHeadings(cb, 220, 666, "Goldmann III", 9, "normal");
-//
-//       } else if (stimulusSize.equals("Goldmann IV")) {
-//           createHeadings(cb, 220, 666, "Goldmann IV", 9, "normal");
-//
-//        } else if (stimulusSize.equals("Goldmann V")) {
-//            createHeadings(cb, 220, 666, "Goldmann V", 9, "normal");
-//
-//        }
     }
 
-        private void pdf_details_col_3(Document document, PdfContentByte cb){
+    private void pdf_details_col_3(Document document, PdfContentByte cb){
         createHeadings(cb, 300, 690, "Visual Acuity", 9, "bold");
         createHeadings(cb, 390, 690, visualAcuity, 9, "normal");
 
@@ -802,156 +844,156 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         createHeadings(cb, 450, 654, "Gender", 9, "bold");
         createHeadings(cb, 490, 654, gender, 9, "normal");
 
-        //createImages(document, stdBmp, 30, 420, 200, 210);
+        createImages(document, stdBmp, 30, 420, 200, 210);
         //createImages(document, bitmap_mapped, 270, 420, 200, 210);
 
         createHeadings(cb, 490, 610, "Sensitivity", 9, "normal");
         createHeadings(cb, 490, 600, "threshold [dB]", 9, "normal");
     }
 
-    //    private void threshold_range_plot(Document document, PdfContentByte cb){
-//        Paint stdpaint = new Paint();
-//        stdpaint.setColor(Color.BLACK);
-//        stdpaint.setStyle(Paint.Style.FILL);
-//
-//        Bitmap bm1_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm2_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm3_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm4_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm5_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm6_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm7_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm8_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm9_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//
-//        Canvas stdcanvas1_1=new Canvas(bm1_1);
-//        Canvas stdcanvas2_1=new Canvas(bm2_1);
-//        Canvas stdcanvas3_1=new Canvas(bm3_1);
-//        Canvas stdcanvas4_1=new Canvas(bm4_1);
-//        Canvas stdcanvas5_1=new Canvas(bm5_1);
-//        Canvas stdcanvas6_1=new Canvas(bm6_1);
-//        Canvas stdcanvas7_1=new Canvas(bm7_1);
-//        Canvas stdcanvas8_1=new Canvas(bm8_1);
-//        Canvas stdcanvas9_1=new Canvas(bm9_1);
-//
-//        stdpaint.setColor(TemporaryVariables.getColorCode(0));
-//        stdcanvas1_1.drawRect(0,0,60,60,stdpaint);
-//
-//        stdpaint.setColor(TemporaryVariables.getColorCode(3));
-//        stdcanvas2_1.drawRect(0,0,60,60,stdpaint);
-//
-//        stdpaint.setColor(TemporaryVariables.getColorCode(8));
-//        stdcanvas3_1.drawRect(0,0,60,60,stdpaint);
-//
-//        stdpaint.setColor(TemporaryVariables.getColorCode(13));
-//        stdcanvas4_1.drawRect(0,0,60,60,stdpaint);
-//
-//        stdpaint.setColor(TemporaryVariables.getColorCode(18));
-//        stdcanvas5_1.drawRect(0,0,60,60,stdpaint);
-//
-//        stdpaint.setColor(TemporaryVariables.getColorCode(23));
-//        stdcanvas6_1.drawRect(0,0,60,60,stdpaint);
-//
-//        stdpaint.setColor(TemporaryVariables.getColorCode(28));
-//        stdcanvas7_1.drawRect(0,0,60,60,stdpaint);
-//
-//        stdpaint.setColor(TemporaryVariables.getColorCode(33));
-//        stdcanvas8_1.drawRect(0,0,60,60,stdpaint);
-//
-//        stdpaint.setColor(TemporaryVariables.getColorCode(35));
-//        stdcanvas9_1.drawRect(0,0,60,60,stdpaint);
-//
-//        createImages(document, bm9_1, 540, 570, 20, 20);
-//        createImages(document, bm8_1, 540, 555, 20, 20);
-//        createImages(document, bm7_1, 540, 540, 20, 20);
-//        createImages(document, bm6_1, 540, 525, 20, 20);
-//        createImages(document, bm5_1, 540, 510, 20, 20);
-//        createImages(document, bm4_1, 540, 495, 20, 20);
-//        createImages(document, bm3_1, 540, 480, 20, 20);
-//        createImages(document, bm2_1, 540, 465, 20, 20);
-//        createImages(document, bm1_1, 540, 450, 20, 20);
-//
-//        createHeadings(cb,500,580,"34 - 36",9,"normal");
-//        createHeadings(cb,500,565,"31 - 35",9,"normal");
-//        createHeadings(cb,500,550,"26 - 30",9,"normal");
-//        createHeadings(cb,500,535,"21 - 25",9,"normal");
-//        createHeadings(cb,500,520,"16 - 20",9,"normal");
-//        createHeadings(cb,500,505,"11 - 15",9,"normal");
-//        createHeadings(cb,500,490,"6 - 10",9,"normal");
-//        createHeadings(cb,500,475,"1 - 5",9,"normal");
-//        createHeadings(cb,500,460,"0",9,"normal");
-//    }
-//    private void p_value_range_plotting(Document document, PdfContentByte cb){
-//        Paint stdpaint = new Paint();
-//        stdpaint.setColor(Color.BLACK);
-//        stdpaint.setStyle(Paint.Style.FILL);
-//
-//        Bitmap bm1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm2 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm3 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//        Bitmap bm4 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
-//
-//        Canvas stdcanvas1=new Canvas(bm1);
-//        Canvas stdcanvas2=new Canvas(bm2);
-//        Canvas stdcanvas3=new Canvas(bm3);
-//        Canvas stdcanvas4=new Canvas(bm4);
-//
-//        // <5
-//
-//        stdcanvas1.drawCircle(20,20,4,stdpaint);
-//        stdcanvas1.drawCircle(20,40,4,stdpaint);
-//        stdcanvas1.drawCircle(40,20,4,stdpaint);
-//        stdcanvas1.drawCircle(40,40,4,stdpaint);
-//
-//        //<2
-//
-//        stdcanvas2.drawCircle(10,10,4,stdpaint);
-//        stdcanvas2.drawCircle(30,10,4,stdpaint);
-//        stdcanvas2.drawCircle(50,10,4,stdpaint);
-//
-//        stdcanvas2.drawCircle(10,30,4,stdpaint);
-//        stdcanvas2.drawCircle(50,30,4,stdpaint);
-//
-//        stdcanvas2.drawCircle(10,50,4,stdpaint);
-//        stdcanvas2.drawCircle(30,50,4,stdpaint);
-//        stdcanvas2.drawCircle(50,50,4,stdpaint);
-//
-//        paint.setStyle(Paint.Style.FILL_AND_STROKE);
-//        paint.setStrokeWidth(2);
-//
-//        stdcanvas2.drawLine(30,10,10,30,stdpaint);
-//        stdcanvas2.drawLine(10,30,30,50,stdpaint);
-//        stdcanvas2.drawLine(30,50,50,30,stdpaint);
-//        stdcanvas2.drawLine(50,30,30,10,stdpaint);
-//
-//        // <1
-//        paint.setStyle(Paint.Style.FILL);
-//        stdcanvas3.drawCircle(10,10,4,stdpaint);
-//        stdcanvas3.drawCircle(30,10,4,stdpaint);
-//        stdcanvas3.drawCircle(50,10,4,stdpaint);
-//
-//        stdcanvas3.drawCircle(10,30,4,stdpaint);
-//        stdcanvas3.drawCircle(30,30,4,stdpaint);
-//        stdcanvas3.drawCircle(50,30,4,stdpaint);
-//
-//        stdcanvas3.drawCircle(10,50,4,stdpaint);
-//        stdcanvas3.drawCircle(30,50,4,stdpaint);
-//        stdcanvas3.drawCircle(50,50,4,stdpaint);
-//
-//        //<0.5
-//        stdcanvas4.drawRect(0,0,60,60,stdpaint);
-//
-//
-//        createImages(document, bm1, 180, 105, 20, 20);
-//        createImages(document, bm2, 180, 90, 20, 20);
-//        createImages(document, bm3, 180, 75, 20, 20);
-//        createImages(document, bm4, 180, 60, 20, 20);
-//
-//        createHeadings(cb,200,115,"< 5%",10,"normal");
-//        createHeadings(cb,200,100,"< 2%",10,"normal");
-//        createHeadings(cb,200,85," < 1%",10,"normal");
-//        createHeadings(cb,200,70,"< 0.5%",10,"normal");
-//    }
+        private void threshold_range_plot(Document document, PdfContentByte cb){
+        Paint stdpaint = new Paint();
+        stdpaint.setColor(Color.BLACK);
+        stdpaint.setStyle(Paint.Style.FILL);
+
+        Bitmap bm1_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm2_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm3_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm4_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm5_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm6_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm7_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm8_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm9_1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+
+        Canvas stdcanvas1_1=new Canvas(bm1_1);
+        Canvas stdcanvas2_1=new Canvas(bm2_1);
+        Canvas stdcanvas3_1=new Canvas(bm3_1);
+        Canvas stdcanvas4_1=new Canvas(bm4_1);
+        Canvas stdcanvas5_1=new Canvas(bm5_1);
+        Canvas stdcanvas6_1=new Canvas(bm6_1);
+        Canvas stdcanvas7_1=new Canvas(bm7_1);
+        Canvas stdcanvas8_1=new Canvas(bm8_1);
+        Canvas stdcanvas9_1=new Canvas(bm9_1);
+
+        stdpaint.setColor(TemporaryVariables.getColorCode(0));
+        stdcanvas1_1.drawRect(0,0,60,60,stdpaint);
+
+        stdpaint.setColor(TemporaryVariables.getColorCode(3));
+        stdcanvas2_1.drawRect(0,0,60,60,stdpaint);
+
+        stdpaint.setColor(TemporaryVariables.getColorCode(8));
+        stdcanvas3_1.drawRect(0,0,60,60,stdpaint);
+
+        stdpaint.setColor(TemporaryVariables.getColorCode(13));
+        stdcanvas4_1.drawRect(0,0,60,60,stdpaint);
+
+        stdpaint.setColor(TemporaryVariables.getColorCode(18));
+        stdcanvas5_1.drawRect(0,0,60,60,stdpaint);
+
+        stdpaint.setColor(TemporaryVariables.getColorCode(23));
+        stdcanvas6_1.drawRect(0,0,60,60,stdpaint);
+
+        stdpaint.setColor(TemporaryVariables.getColorCode(28));
+        stdcanvas7_1.drawRect(0,0,60,60,stdpaint);
+
+        stdpaint.setColor(TemporaryVariables.getColorCode(33));
+        stdcanvas8_1.drawRect(0,0,60,60,stdpaint);
+
+        stdpaint.setColor(TemporaryVariables.getColorCode(35));
+        stdcanvas9_1.drawRect(0,0,60,60,stdpaint);
+
+        createImages(document, bm9_1, 540, 570, 20, 20);
+        createImages(document, bm8_1, 540, 555, 20, 20);
+        createImages(document, bm7_1, 540, 540, 20, 20);
+        createImages(document, bm6_1, 540, 525, 20, 20);
+        createImages(document, bm5_1, 540, 510, 20, 20);
+        createImages(document, bm4_1, 540, 495, 20, 20);
+        createImages(document, bm3_1, 540, 480, 20, 20);
+        createImages(document, bm2_1, 540, 465, 20, 20);
+        createImages(document, bm1_1, 540, 450, 20, 20);
+
+        createHeadings(cb,500,580,"34 - 36",9,"normal");
+        createHeadings(cb,500,565,"31 - 35",9,"normal");
+        createHeadings(cb,500,550,"26 - 30",9,"normal");
+        createHeadings(cb,500,535,"21 - 25",9,"normal");
+        createHeadings(cb,500,520,"16 - 20",9,"normal");
+        createHeadings(cb,500,505,"11 - 15",9,"normal");
+        createHeadings(cb,500,490,"6 - 10",9,"normal");
+        createHeadings(cb,500,475,"1 - 5",9,"normal");
+        createHeadings(cb,500,460,"0",9,"normal");
+    }
+    private void p_value_range_plotting(Document document, PdfContentByte cb){
+        Paint stdpaint = new Paint();
+        stdpaint.setColor(Color.BLACK);
+        stdpaint.setStyle(Paint.Style.FILL);
+
+        Bitmap bm1 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm2 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm3 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+        Bitmap bm4 = Bitmap.createBitmap(100,100, Bitmap.Config.ARGB_8888);
+
+        Canvas stdcanvas1=new Canvas(bm1);
+        Canvas stdcanvas2=new Canvas(bm2);
+        Canvas stdcanvas3=new Canvas(bm3);
+        Canvas stdcanvas4=new Canvas(bm4);
+
+        // <5
+
+        stdcanvas1.drawCircle(20,20,4,stdpaint);
+        stdcanvas1.drawCircle(20,40,4,stdpaint);
+        stdcanvas1.drawCircle(40,20,4,stdpaint);
+        stdcanvas1.drawCircle(40,40,4,stdpaint);
+
+        //<2
+
+        stdcanvas2.drawCircle(10,10,4,stdpaint);
+        stdcanvas2.drawCircle(30,10,4,stdpaint);
+        stdcanvas2.drawCircle(50,10,4,stdpaint);
+
+        stdcanvas2.drawCircle(10,30,4,stdpaint);
+        stdcanvas2.drawCircle(50,30,4,stdpaint);
+
+        stdcanvas2.drawCircle(10,50,4,stdpaint);
+        stdcanvas2.drawCircle(30,50,4,stdpaint);
+        stdcanvas2.drawCircle(50,50,4,stdpaint);
+
+        paint.setStyle(Paint.Style.FILL_AND_STROKE);
+        paint.setStrokeWidth(2);
+
+        stdcanvas2.drawLine(30,10,10,30,stdpaint);
+        stdcanvas2.drawLine(10,30,30,50,stdpaint);
+        stdcanvas2.drawLine(30,50,50,30,stdpaint);
+        stdcanvas2.drawLine(50,30,30,10,stdpaint);
+
+        // <1
+        paint.setStyle(Paint.Style.FILL);
+        stdcanvas3.drawCircle(10,10,4,stdpaint);
+        stdcanvas3.drawCircle(30,10,4,stdpaint);
+        stdcanvas3.drawCircle(50,10,4,stdpaint);
+
+        stdcanvas3.drawCircle(10,30,4,stdpaint);
+        stdcanvas3.drawCircle(30,30,4,stdpaint);
+        stdcanvas3.drawCircle(50,30,4,stdpaint);
+
+        stdcanvas3.drawCircle(10,50,4,stdpaint);
+        stdcanvas3.drawCircle(30,50,4,stdpaint);
+        stdcanvas3.drawCircle(50,50,4,stdpaint);
+
+        //<0.5
+        stdcanvas4.drawRect(0,0,60,60,stdpaint);
+
+
+        createImages(document, bm1, 180, 105, 20, 20);
+        createImages(document, bm2, 180, 90, 20, 20);
+        createImages(document, bm3, 180, 75, 20, 20);
+        createImages(document, bm4, 180, 60, 20, 20);
+
+        createHeadings(cb,200,115,"< 5%",10,"normal");
+        createHeadings(cb,200,100,"< 2%",10,"normal");
+        createHeadings(cb,200,85," < 1%",10,"normal");
+        createHeadings(cb,200,70,"< 0.5%",10,"normal");
+    }
     private void VFI_MD_PSD_GHT_Box(Document document, PdfContentByte cb) {
         Rectangle rectangle2 = new Rectangle(385, 300, 580, 250);
         rectangle2.setBorder(Rectangle.BOX);
@@ -1081,14 +1123,14 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         pdf_details_col_3(document,cb);
         pdf_details_col_4(document, cb);
         // Uncomment and adjust as needed
-        // threshold_range_plot(document, cb);
+         threshold_range_plot(document, cb);
         // createImages(document, totalDeviationBmp1, 30, 250, 150, 155);
         // createHeadings(cb, 75, 235, "Total Deviation", 9, "normal");
         // createImages(document, totalDeviationBmp2, 30, 80, 150, 155);
         // createImages(document, patternDeviationBmp1, 210, 250, 150, 155);
         // createHeadings(cb, 260, 235, "Pattern Deviation", 9, "normal");
         // createImages(document, patternDeviationBmp2, 210, 80, 150, 155);
-        // p_value_range_plotting(document, cb);
+         p_value_range_plotting(document, cb);
         VFI_MD_PSD_GHT_Box(document, cb);
         eye_tracking_box(document, cb);
         // additional_notes_data(document, cb);
