@@ -15,6 +15,7 @@ import androidx.core.content.FileProvider;
 import com.example.qr_code_generatorscanner.NormativeData._24_2_NormativeData;
 
 import android.annotation.SuppressLint;
+import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -2357,23 +2358,15 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 intent.setData(uri);
                 startActivityForResult(intent, REQUEST_MANAGE_EXTERNAL_STORAGE);
             } else {
-                String pdffilepath=savePdf();
-        if (pdffilepath != null) {
-            viewPdf(pdffilepath);
-        } else {
-            Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
-        }
+                savePdf();
             }
-        } else {
-            String pdffilepath=savePdf();
-        if (pdffilepath != null) {
-            viewPdf(pdffilepath);
-        } else {
-            Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
-        }
-        }
 
-    }
+            }
+         else {
+            savePdf();
+
+        }
+}
     private BaseFont bfNormal;
     private BaseFont bfBold;
 
@@ -2837,57 +2830,78 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return pdfFile;
+       viewPdf(file);
+
+            return pdfFile;
+
     }
 
 
-    private void viewPdf(final String pdfFilePath) {
+//    private void viewPdf(final String pdfFilePath) {
+//        try {
+//            File pdfFile = new File(pdfFilePath);
+//
+//            // Get URI for the file using FileProvider
+//            final Uri uri = FileProvider.getUriForFile(this,
+//                    getPackageName() + ".provider", pdfFile);
+//
+//            // Check if URI is not null
+//            if (uri != null) {
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Intent intent = new Intent(Intent.ACTION_VIEW);
+//                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+//                        intent.setDataAndType(uri, "application/pdf");
+//                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//                        Uri URI = FileProvider.getUriForFile(ScanQRCodeActivity.this, ScanQRCodeActivity.this.getApplicationContext().getPackageName() + ".provider", pdfFile);
+//
+//
+//                        // Verify that there are apps available to open this intent
+//                        List<ResolveInfo> resolvedActivities = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+//                        if (resolvedActivities.size() > 0) {
+//                            startActivity(intent);
+//                        } else {
+//                            Toast.makeText(ScanQRCodeActivity.this, "No PDF viewer app installed", Toast.LENGTH_SHORT).show();
+//                        }
+//                    }
+//                });
+//            } else {
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Toast.makeText(ScanQRCodeActivity.this, "Failed to get PDF URI", Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+//            }
+//        } catch (final Exception e) {
+//            e.printStackTrace();
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    Toast.makeText(ScanQRCodeActivity.this, "Error opening PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                }
+//            });
+//        }
+//    }
+
+    private void viewPdf(File file) {
+        // Use FileProvider to get a content URI
         try {
-            File pdfFile = new File(pdfFilePath);
-
-            // Get URI for the file using FileProvider
-            final Uri uri = FileProvider.getUriForFile(this,
-                    getPackageName() + ".provider", pdfFile);
-
-            // Check if URI is not null
-            if (uri != null) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                        intent.setDataAndType(uri, "application/pdf");
-                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        Uri URI = FileProvider.getUriForFile(ScanQRCodeActivity.this, ScanQRCodeActivity.this.getApplicationContext().getPackageName() + ".provider", pdfFile);
-
-
-                        // Verify that there are apps available to open this intent
-                        List<ResolveInfo> resolvedActivities = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-                        if (resolvedActivities.size() > 0) {
-                            startActivity(intent);
-                        } else {
-                            Toast.makeText(ScanQRCodeActivity.this, "No PDF viewer app installed", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            } else {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(ScanQRCodeActivity.this, "Failed to get PDF URI", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        } catch (final Exception e) {
+            android.net.Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".provider", file);
+            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "application/pdf");
+            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, "No PDF viewer app installed", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
             e.printStackTrace();
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(ScanQRCodeActivity.this, "Error opening PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
+            Toast.makeText(this, "Error opening PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
+
 
 
 
