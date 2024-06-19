@@ -218,7 +218,6 @@ public class ScanQRCodeActivity extends AppCompatActivity {
 
         software_version = TemporaryVariables.getSoftwareVersion();
 
-        hardware_version = TemporaryVariables.getHardwareVersion();
 
         if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
             flagSetting = Settings.System.canWrite(getApplicationContext());
@@ -304,6 +303,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 ght = parsedData.get("GHT");
                 eyeTracking = parsedData.get("Eye Tracking");
                 lookedAway = parsedData.get("Looked Away");
+                hardware_version=parsedData.get("Hardware");
 
                // calculate();
                 if(intensity!=null){
