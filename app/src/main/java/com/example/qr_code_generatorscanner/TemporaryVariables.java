@@ -96,8 +96,7 @@ public class TemporaryVariables {
 //        TemporaryVariables.chatController = chatController;
 //    }
 
-    public static String getSoftwareVersion() {
-        return softwareVersion;
+    public static String getSoftwareVersion() {return softwareVersion;
     }
 
     public static void setSoftwareVersion(String softwareVersion) {
@@ -111,7 +110,6 @@ public class TemporaryVariables {
     public static void setHardwareVersion(String hardwareVersion) {
         TemporaryVariables.hardwareVersion = hardwareVersion;
     }
-
     public static String getReportColor() {
         return reportColor;
     }

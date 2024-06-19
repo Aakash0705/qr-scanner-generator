@@ -3,8 +3,11 @@ package com.example.qr_code_generatorscanner;
 import static android.Manifest.permission.CAMERA;
 import static android.Manifest.permission.VIBRATE;
 
+
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -12,9 +15,11 @@ import androidx.core.content.FileProvider;
 import com.example.qr_code_generatorscanner.NormativeData._24_2_NormativeData;
 
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -28,6 +33,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
@@ -56,6 +62,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import eu.livotov.labs.android.camview.ScannerLiveView;
@@ -71,6 +78,12 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String scannedData;
     private String intensity;
     private static Paint paint;
+
+
+    private final int PERMISSION_REQUEST_CODE=100;
+    private static final int WRITE_SETTINGS_REQUEST_CODE = 1001;
+    private static final int ALL_FILES_ACCESS_REQUEST_CODE = 1002;
+    private boolean flagSetting;
 
     double psd = 0;
     String software_version="", hardware_version="";
@@ -113,6 +126,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String eyeTracking;
     private String lookedAway;
 
+    private String pdfFile;
     SharedPreferences sharedPreferences;
     private static final String MY_PREFS_NAME = "METADATA_PS_OPERATOR";
 
@@ -202,15 +216,29 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences(MY_PREFS_NAME,MODE_PRIVATE);
 
         software_version = TemporaryVariables.getSoftwareVersion();
-        hardware_version = sharedPreferences.getString("hardwareVersion","");
+
+        hardware_version = TemporaryVariables.getHardwareVersion();
+
+        if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
+            flagSetting = Settings.System.canWrite(getApplicationContext());
+        }
 
 
-
-        if (checkPermission()) {
+//        if (checkPermission()) {
+//            Toast.makeText(this, "Permission Granted..", Toast.LENGTH_SHORT).show();
+//        } else {
+//            requestPermission();
+//        }
+        if (checkPermission() && checkSettingsPermission()) {
             Toast.makeText(this, "Permission Granted..", Toast.LENGTH_SHORT).show();
         } else {
-            requestPermission();
+            if (!checkPermission()) {
+                requestPermission();
+            } else if (!checkSettingsPermission()) {
+                askPermission();
+            }
         }
+
 
         scannerLiveView.setScannerViewEventListener(new ScannerLiveView.ScannerViewEventListener() {
             @Override
@@ -277,7 +305,11 @@ public class ScanQRCodeActivity extends AppCompatActivity {
                 lookedAway = parsedData.get("Looked Away");
 
                // calculate();
-                parseAndAssignIntensity(intensity);
+                if(intensity!=null){
+                parseAndAssignIntensity(intensity);}
+                else{
+                    Toast.makeText(ScanQRCodeActivity.this,"Data not scanned",Toast.LENGTH_SHORT).show();
+                }
                 // Background Task to create the report
                 new MyTask().execute();
 //                try {
@@ -2202,10 +2234,45 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         int vibratePermission = ContextCompat.checkSelfPermission(getApplicationContext(), VIBRATE);
         return cameraPermission == PackageManager.PERMISSION_GRANTED && vibratePermission == PackageManager.PERMISSION_GRANTED;
     }
+    private boolean checkSettingsPermission() {
+        // Check if WRITE_SETTINGS permission is granted
+        return Settings.System.canWrite(this);
+    }
 
     private void requestPermission() {
         int PERMISSION_CODE = 200;
         ActivityCompat.requestPermissions(this, new String[]{CAMERA, VIBRATE}, PERMISSION_CODE);
+    }
+    void askPermission() {
+        if (!flagSetting) {
+            final AlertDialog alertDialog = new AlertDialog.Builder(ScanQRCodeActivity.this).create();
+            alertDialog.setTitle("Access Required !");
+            alertDialog.setMessage("App Need Access To Settings and All Files. Please Give Access");
+            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    // Request the WRITE_SETTINGS permission
+                    Intent writeSettingsIntent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
+                    writeSettingsIntent.setData(Uri.parse("package:" + getPackageName()));
+                    startActivityForResult(writeSettingsIntent, WRITE_SETTINGS_REQUEST_CODE);
+
+                    // Request the ALL_FILES_ACCESS_PERMISSION permission
+                    Intent allFilesAccessIntent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    allFilesAccessIntent.setData(Uri.parse("package:" + getPackageName()));
+                    startActivityForResult(allFilesAccessIntent, ALL_FILES_ACCESS_REQUEST_CODE);
+                }
+            });
+
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+
+            alertDialog.setCanceledOnTouchOutside(false);
+            alertDialog.show();
+        }
     }
 
     @Override
@@ -2229,11 +2296,11 @@ public class ScanQRCodeActivity extends AppCompatActivity {
         if (grantResults.length > 0) {
             boolean cameraAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
             boolean vibrationAccepted = grantResults[1] == PackageManager.PERMISSION_GRANTED;
-            if (cameraAccepted && vibrationAccepted) {
-                Toast.makeText(this, "Permission Granted...", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Permission Denied \n You can't use the app without permissions", Toast.LENGTH_SHORT).show();
-            }
+//            if (cameraAccepted && vibrationAccepted) {
+//                Toast.makeText(this, "Permission Granted...", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Toast.makeText(this, "Permission Denied \n You can't use the app without permissions", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
     @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
@@ -2277,11 +2344,33 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     }
     private void createPdfWrapper() throws FileNotFoundException, DocumentException {
 
-        String pdffilepath=savePdf();
+//        String pdffilepath=savePdf();
+//        if (pdffilepath != null) {
+//            viewPdf(pdffilepath);
+//        } else {
+//            Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
+//        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                Uri uri = Uri.fromParts("package", getPackageName(), null);
+                intent.setData(uri);
+                startActivityForResult(intent, REQUEST_MANAGE_EXTERNAL_STORAGE);
+            } else {
+                String pdffilepath=savePdf();
         if (pdffilepath != null) {
             viewPdf(pdffilepath);
         } else {
             Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
+        }
+            }
+        } else {
+            String pdffilepath=savePdf();
+        if (pdffilepath != null) {
+            viewPdf(pdffilepath);
+        } else {
+            Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
+        }
         }
 
     }
@@ -2688,7 +2777,7 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     private String savePdf() {
         SimpleDateFormat s = new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss");
         String format = s.format(new Date());
-        String pdfFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + format + "scannedData.pdf";
+        pdfFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/" + format + "scannedData.pdf";
         File file = new File(pdfFile);
 
         OutputStream output = null;
@@ -2752,32 +2841,51 @@ public class ScanQRCodeActivity extends AppCompatActivity {
     }
 
 
-    private void viewPdf(String pdfFilePath) {
+    private void viewPdf(final String pdfFilePath) {
         try {
             File pdfFile = new File(pdfFilePath);
 
             // Get URI for the file using FileProvider
-            Uri uri = FileProvider.getUriForFile(this,
+            final Uri uri = FileProvider.getUriForFile(this,
                     getPackageName() + ".provider", pdfFile);
 
             // Check if URI is not null
             if (uri != null) {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(uri, "application/pdf");
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        intent.setDataAndType(uri, "application/pdf");
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        Uri URI = FileProvider.getUriForFile(ScanQRCodeActivity.this, ScanQRCodeActivity.this.getApplicationContext().getPackageName() + ".provider", pdfFile);
 
-                // Verify that there are apps available to open this intent
-                if (intent.resolveActivity(getPackageManager()) != null) {
-                    startActivity(intent);
-                } else {
-                    Toast.makeText(this, "No PDF viewer app installed", Toast.LENGTH_SHORT).show();
-                }
+
+                        // Verify that there are apps available to open this intent
+                        List<ResolveInfo> resolvedActivities = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                        if (resolvedActivities.size() > 0) {
+                            startActivity(intent);
+                        } else {
+                            Toast.makeText(ScanQRCodeActivity.this, "No PDF viewer app installed", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
             } else {
-                Toast.makeText(this, "Failed to get PDF URI", Toast.LENGTH_SHORT).show();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(ScanQRCodeActivity.this, "Failed to get PDF URI", Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "Error opening PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(ScanQRCodeActivity.this, "Error opening PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 
